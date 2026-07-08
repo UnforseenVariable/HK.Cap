@@ -11481,17 +11481,14 @@ function ModuleButton({
   return /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
-      width: "100%",
-      maxWidth: 80,
-      margin: "0 auto"
+      width: 80
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onToggle,
     title: `${mod.name} — ${mod.capUse > 0 ? `${fmt(mod.capUse)} GJ / ${mod.cycleS}s` : mod.inject ? `+${fmt(mod.inject)} GJ` : `${mod.cycleS}s cycle`}`,
     style: {
-      width: "100%",
-      maxWidth: 58,
-      aspectRatio: "1",
+      width: 58,
+      height: 58,
       borderRadius: "50%",
       cursor: "pointer",
       border: "none",
@@ -13433,7 +13430,7 @@ function CapacitorTrainer() {
         letterSpacing: 1,
         marginBottom: 10
       }
-    }, scenario.locked ? "MODULE RACK · BENCHMARK — loadout is fixed for fair comparison; only hotkeys and auto-repeat are adjustable" : "MODULE RACK — 16 slots · click a key chip to rebind its hotkey"), fit.modules.map((m, i) => /*#__PURE__*/React.createElement("div", {
+    }, scenario.locked ? "MODULE RACK · BENCHMARK — loadout is fixed for fair comparison; only hotkeys and auto-repeat are adjustable" : "MODULE RACK — 10 slots · click a key chip to rebind its hotkey"), fit.modules.map((m, i) => /*#__PURE__*/React.createElement("div", {
       key: m.id,
       style: {
         display: "flex",
@@ -13989,12 +13986,11 @@ function CapacitorTrainer() {
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
-      gridTemplateColumns: "repeat(8, minmax(0, 1fr))",
-      gap: isMobile ? "8px 3px" : "10px 5px",
-      maxWidth: isMobile ? "100%" : 660
+      gridTemplateColumns: "repeat(4, 84px)",
+      gap: "10px 4px"
     }
   }, Array.from({
-    length: 16
+    length: 12
   }, (_, s) => {
     const m = fit.modules.find(x => x.slot === s);
     return /*#__PURE__*/React.createElement("div", {
@@ -14018,7 +14014,7 @@ function CapacitorTrainer() {
         setHoverSlot(null);
       },
       style: {
-        minHeight: isMobile ? 84 : 106,
+        minHeight: 106,
         borderRadius: 10,
         display: "flex",
         justifyContent: "center",
@@ -14046,8 +14042,7 @@ function CapacitorTrainer() {
         toggleAutoRepeat(m.id);
       },
       style: {
-        cursor: "grab",
-        width: "100%"
+        cursor: "grab"
       }
     }, /*#__PURE__*/React.createElement(ModuleButton, {
       mod: m,
@@ -14056,10 +14051,9 @@ function CapacitorTrainer() {
       onToggle: () => toggleModule(m.id)
     })) : /*#__PURE__*/React.createElement("div", {
       style: {
-        width: "100%",
-        maxWidth: 56,
-        aspectRatio: "1",
-        margin: "3px auto 0",
+        width: 56,
+        height: 56,
+        marginTop: 3,
         borderRadius: "50%",
         border: "1px dashed #23272B",
         opacity: 0.7
