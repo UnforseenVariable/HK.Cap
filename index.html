@@ -11922,22 +11922,25 @@ function CapacitorTrainer() {
         Object.keys(s.mods).forEach(k => s.mods[k] = {
           ...s.mods[k]
         });
+        let out = s;
         if (tickMode || scnRef.current && scnRef.current.locked) {
-          // 1 Hz server tick: logic resolves in whole seconds, displayT advances smoothly for animation
+          // 1 Hz server tick: logic resolves in whole seconds; displayT advances smoothly for animation
           s.displayT = (s.displayT != null ? s.displayT : s.t) + 0.1 * s.speed;
           s.tickAccum = (s.tickAccum || 0) + 0.1 * s.speed;
           if (s.tickAccum >= 1) {
             s.tickAccum -= 1;
-            s.shieldPrev = s.shield;
-            s.armorPrev = s.armor;
-            s.hullPrev = s.hull;
-            return step(s, fitRef.current, scnRef.current, 1, (m, ty) => pushLog(s, m, ty));
+            out = step(s, fitRef.current, scnRef.current, 1, (m, ty) => pushLog(s, m, ty));
           }
-          return s;
+        } else {
+          out = step(s, fitRef.current, scnRef.current, 0.1 * s.speed, (m, ty) => pushLog(s, m, ty));
+          out.displayT = out.t;
         }
-        const stepped = step(s, fitRef.current, scnRef.current, 0.1 * s.speed, (m, ty) => pushLog(s, m, ty));
-        stepped.displayT = stepped.t;
-        return stepped;
+        // continuous exponential smoothing of the displayed HP toward the (quantized) true values
+        const _k = 0.3;
+        out.dShield = out.dShield == null ? out.shield : out.dShield + (out.shield - out.dShield) * _k;
+        out.dArmor = out.dArmor == null ? out.armor : out.dArmor + (out.armor - out.dArmor) * _k;
+        out.dHull = out.dHull == null ? out.hull : out.dHull + (out.hull - out.dHull) * _k;
+        return out;
       });
     }, 100);
     return () => clearInterval(iv);
@@ -13229,12 +13232,9 @@ function CapacitorTrainer() {
   const ct = combatOn ? sim.t - sim.siegeStartT : 0;
   const neutAvg = scenario.neuts.reduce((a, n) => combatOn && ct >= n.startS - 3 ? a + n.amount * n.count * (1 - (fit.neutResist || 0)) / n.cycleS : a, 0);
   const net = regen - modDrain - neutAvg;
-  const _tfRaw = tickMode ? Math.max(0, Math.min(1, (sim.tickAccum || 0) / 0.3)) : 1;
-  const _tf = 1 - (1 - _tfRaw) * (1 - _tfRaw);
-  const _lerp = (a, b) => a == null ? b : a + (b - a) * _tf;
-  const dShield = _lerp(sim.shieldPrev, sim.shield);
-  const dArmor = _lerp(sim.armorPrev, sim.armor);
-  const dHull = _lerp(sim.hullPrev, sim.hull);
+  const dShield = sim.dShield != null ? sim.dShield : sim.shield;
+  const dArmor = sim.dArmor != null ? sim.dArmor : sim.armor;
+  const dHull = sim.dHull != null ? sim.dHull : sim.hull;
   const neutFlash = sim.t - sim.lastNeutHit < 0.7;
   const tRemain = Math.max(0, scenario.durationS - ct);
   const rS = effResist(sim, fit, "shield"),
