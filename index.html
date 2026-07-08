@@ -1729,12 +1729,18 @@ function initSim(fit, scenario) {
       gunUp: 0,
       sweet: 0,
       dry: 0,
+      lowCapS: 0,
+      minCap: 1,
       charges: 0,
       wastedInj: 0,
       capOuts: 0
     },
     ended: false,
-    result: null
+    result: null,
+    hist: [],
+    injMarks: [],
+    neutMarks: [],
+    _lastBkt: -1
   };
 }
 function siegeMults(sim, fit) {
@@ -1764,6 +1770,7 @@ function startCycle(sim, fit, m, log) {
     sim.cap = Math.min(fit.capMax, sim.cap + (m.inject || 0));
     sim.stats.injected += sim.cap - before;
     sim.stats.charges += 1;
+    if (sim.injMarks) sim.injMarks.push(sim.t);
     if (before / fit.capMax > 0.85) sim.stats.wastedInj += 1;
     r.cycleEndT = sim.t + m.cycleS;
     r.cycleLen = m.cycleS;
@@ -1905,13 +1912,28 @@ function step(sim, fit, scenario, dt, log) {
   // Stats
   const f = sim.cap / fit.capMax;
   if (f >= 0.2 && f <= 0.4) sim.stats.sweet += dt;
+  if (f < 0.2) sim.stats.lowCapS += dt;
   if (sim.cap <= 1) sim.stats.dry += dt;
+  if (f < sim.stats.minCap) sim.stats.minCap = f;
+  const bkt = Math.floor(sim.t * 2);
+  if (sim.hist && sim._lastBkt !== bkt) {
+    sim._lastBkt = bkt;
+    sim.hist.push({
+      t: sim.t,
+      c: f,
+      s: sim.shield / effHpMax(fit, "shield"),
+      a: sim.armor / effHpMax(fit, "armor"),
+      h: sim.hull / effHpMax(fit, "hull")
+    });
+  }
 
   // End conditions
   if (sim.hull <= 0) {
     sim.ended = true;
     sim.result = "destroyed";
     sim.running = false;
+    sim.deathCapPct = sim.cap / fit.capMax;
+    sim.boostersGone = sim.cargo <= 0 && sim.fleet <= 0;
     log("💥 Ship destroyed.", "bad");
   } else if (sim.t >= scenario.durationS) {
     sim.ended = true;
@@ -3959,7 +3981,9 @@ function CapacitorTrainer() {
       border: `1px solid ${sim.result === "survived" ? C.green : C.red}`,
       borderRadius: 10,
       padding: 26,
-      width: 480
+      width: 520,
+      maxHeight: "90vh",
+      overflowY: "auto"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3972,7 +3996,81 @@ function CapacitorTrainer() {
     const secs = sim.t;
     const tier = secs >= 300 ? "ELITE" : secs >= 180 ? "VETERAN" : secs >= 90 ? "CAPABLE" : secs >= 45 ? "GREEN" : "ROOKIE";
     const tierColor = secs >= 180 ? C.green : secs >= 90 ? C.amber : C.red;
-    return /*#__PURE__*/React.createElement("div", {
+    const capUptime = Math.max(0, Math.round(100 * (1 - sim.stats.dry / Math.max(1, secs))));
+    const injEff = sim.stats.charges > 0 ? Math.round(100 * (sim.stats.charges - sim.stats.wastedInj) / sim.stats.charges) : null;
+    const sweetPct = Math.round(100 * sim.stats.sweet / Math.max(1, secs));
+    const gunSlots = Math.max(1, fit.modules.filter(m => m.kind === "gun" || m.kind === "remoteRep").length);
+    const objUptime = Math.round(100 * sim.stats.gunUp / Math.max(1, secs * gunSlots));
+    const capEnd = sim.deathCapPct != null ? sim.deathCapPct : sim.cap / fit.capMax;
+    // cause of death
+    let cause = null;
+    if (sim.result === "destroyed") {
+      if (sim.boostersGone && capEnd < 0.3) cause = "Out of cap boosters — cargo and fleet both empty, so nothing left to inject and your reps starved.";else if (sim.stats.capOuts > 0 && capEnd < 0.3) cause = "Cap starvation — your capacitor bottomed out, reps stopped cycling, and the tank collapsed.";else if (capEnd > 0.45) cause = "Overwhelmed by DPS — cap stayed healthy, incoming damage simply out-paced your reps. Tank harder or lower the threat.";else cause = "Cap + damage together — low cap throttled your reps while damage kept landing. Keeping reps cycling is the priority.";
+    }
+    // prioritised coaching (worst first)
+    const issues = [];
+    if (sim.stats.dry > 2) issues.push([sim.stats.dry + 100, `Cap flatlined for ${sim.stats.dry.toFixed(0)}s — reps can't run at 0 GJ. Shut non-essentials off BEFORE a neut wave lands, not after.`]);
+    if (sim.stats.capOuts > 1) issues.push([sim.stats.capOuts + 50, `${sim.stats.capOuts} modules cap-starved and deactivated. Stagger cycles and inject earlier so nothing drops off.`]);
+    if (sim.stats.wastedInj > 0) issues.push([sim.stats.wastedInj + 30, `${sim.stats.wastedInj} charge(s) injected above 85% cap — mostly overflow. Inject low, ideally under 50%, to bank the full 3,200 GJ.`]);
+    if (sweetPct < 15 && sim.stats.dry < 2) issues.push([10, `Only ${sweetPct}% of the fight sat in the 20-40% band where regen peaks (~${(2.5 * fit.capMax / fit.capRechargeS).toFixed(0)} GJ/s). Riding high cap wastes free regen.`]);
+    if (sim.cargo === 0 && sim.fleet === 0 && sim.result !== "survived") issues.push([40, "You burned every cap booster. Ration injections — reserve some for the heaviest neut spikes."]);
+    issues.sort((a, b) => b[0] - a[0]);
+    const Metric = ({
+      label,
+      val,
+      sub,
+      tone
+    }) => /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 96,
+        background: "#0A111D",
+        border: `1px solid ${C.line}`,
+        borderRadius: 8,
+        padding: "10px 12px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 22,
+        fontWeight: 700,
+        color: tone || C.text,
+        lineHeight: 1
+      }
+    }, val), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: C.dim,
+        letterSpacing: 1,
+        marginTop: 5
+      }
+    }, label), sub && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: "#5A5F66",
+        marginTop: 2
+      }
+    }, sub));
+    const H = sim.hist || [];
+    const maxT = Math.max(1, H.length ? H[H.length - 1].t : secs);
+    const CW = 472,
+      CH = 92,
+      cpad = 3;
+    const cx = t => cpad + t / maxT * (CW - cpad * 2);
+    const cy = v => cpad + (1 - Math.max(0, Math.min(1, v))) * (CH - cpad * 2);
+    const lineOf = k => H.map((p, i) => `${i ? "L" : "M"}${cx(p.t).toFixed(1)},${cy(p[k]).toFixed(1)}`).join(" ");
+    const areaOf = k => H.length ? `M${cx(H[0].t).toFixed(1)},${cy(0).toFixed(1)} ` + H.map(p => `L${cx(p.t).toFixed(1)},${cy(p[k]).toFixed(1)}`).join(" ") + ` L${cx(H[H.length - 1].t).toFixed(1)},${cy(0).toFixed(1)} Z` : "";
+    const svgStyle = {
+      width: "100%",
+      height: "auto",
+      display: "block",
+      background: "#0A111D",
+      border: `1px solid ${C.line}`,
+      borderRadius: 6
+    };
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "baseline",
@@ -4010,56 +4108,278 @@ function CapacitorTrainer() {
         fontSize: 10,
         color: C.green
       }
-    }, "· outlasted the scenario"));
+    }, "· outlasted the scenario")), cause && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 12,
+        background: "rgba(224,85,72,.08)",
+        border: `1px solid ${C.red}`,
+        borderRadius: 8,
+        padding: "10px 12px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: C.red,
+        letterSpacing: 2,
+        marginBottom: 4
+      }
+    }, "CAUSE OF LOSS"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12.5,
+        color: C.text,
+        lineHeight: 1.5
+      }
+    }, cause)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginTop: 14,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement(Metric, {
+      label: "CAP UPTIME",
+      val: `${capUptime}%`,
+      sub: `min ${Math.round(sim.stats.minCap * 100)}%`,
+      tone: capUptime > 90 ? C.green : capUptime > 70 ? C.amber : C.red
+    }), /*#__PURE__*/React.createElement(Metric, {
+      label: "INJECT EFFICIENCY",
+      val: injEff == null ? "—" : `${injEff}%`,
+      sub: `${sim.stats.charges} charges used`,
+      tone: injEff == null ? C.dim : injEff > 85 ? C.green : injEff > 60 ? C.amber : C.red
+    }), /*#__PURE__*/React.createElement(Metric, {
+      label: "PEAK-REGEN ZONE",
+      val: `${sweetPct}%`,
+      sub: "20–40% band",
+      tone: sweetPct > 30 ? C.green : sweetPct > 12 ? C.amber : C.red
+    }), /*#__PURE__*/React.createElement(Metric, {
+      label: "OBJECTIVE UPTIME",
+      val: `${objUptime}%`,
+      sub: "guns / reps on",
+      tone: objUptime > 80 ? C.green : objUptime > 50 ? C.amber : C.dim
+    })), H.length > 1 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        marginBottom: 4
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: C.dim,
+        letterSpacing: 2
+      }
+    }, "CAPACITOR TIMELINE"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 8,
+        color: "#5A5F66"
+      }
+    }, "peak-regen band shaded · ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.cyan
+      }
+    }, "●"), " inject")), /*#__PURE__*/React.createElement("svg", {
+      viewBox: `0 0 ${CW} ${CH}`,
+      style: svgStyle
+    }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+      id: "capgrad",
+      x1: "0",
+      y1: "0",
+      x2: "0",
+      y2: "1"
+    }, /*#__PURE__*/React.createElement("stop", {
+      offset: "0%",
+      stopColor: C.amber,
+      stopOpacity: "0.42"
+    }), /*#__PURE__*/React.createElement("stop", {
+      offset: "100%",
+      stopColor: C.amber,
+      stopOpacity: "0.03"
+    }))), /*#__PURE__*/React.createElement("rect", {
+      x: cpad,
+      y: cy(0.4),
+      width: CW - cpad * 2,
+      height: cy(0.2) - cy(0.4),
+      fill: C.green,
+      opacity: "0.11"
+    }), [0.25, 0.5, 0.75].map(g => /*#__PURE__*/React.createElement("line", {
+      key: g,
+      x1: cpad,
+      y1: cy(g),
+      x2: CW - cpad,
+      y2: cy(g),
+      stroke: C.line,
+      strokeWidth: "0.5",
+      strokeDasharray: "2 3"
+    })), /*#__PURE__*/React.createElement("path", {
+      d: areaOf("c"),
+      fill: "url(#capgrad)"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: lineOf("c"),
+      fill: "none",
+      stroke: C.amber,
+      strokeWidth: "1.6",
+      strokeLinejoin: "round"
+    }), (sim.injMarks || []).map((t, i) => /*#__PURE__*/React.createElement("circle", {
+      key: i,
+      cx: cx(t),
+      cy: CH - 3.5,
+      r: "1.5",
+      fill: C.cyan
+    })))), H.length > 1 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        marginBottom: 4
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: C.dim,
+        letterSpacing: 2
+      }
+    }, "DEFENSES TIMELINE"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 8,
+        color: "#5A5F66"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.cyan
+      }
+    }, "—"), " shield\xA0 ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.armor
+      }
+    }, "—"), " armor\xA0 ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.hull
+      }
+    }, "—"), " hull")), /*#__PURE__*/React.createElement("svg", {
+      viewBox: `0 0 ${CW} ${CH}`,
+      style: svgStyle
+    }, [0.25, 0.5, 0.75].map(g => /*#__PURE__*/React.createElement("line", {
+      key: g,
+      x1: cpad,
+      y1: cy(g),
+      x2: CW - cpad,
+      y2: cy(g),
+      stroke: C.line,
+      strokeWidth: "0.5",
+      strokeDasharray: "2 3"
+    })), /*#__PURE__*/React.createElement("path", {
+      d: lineOf("s"),
+      fill: "none",
+      stroke: C.cyan,
+      strokeWidth: "1.3",
+      strokeLinejoin: "round"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: lineOf("a"),
+      fill: "none",
+      stroke: C.armor,
+      strokeWidth: "1.3",
+      strokeLinejoin: "round"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: lineOf("h"),
+      fill: "none",
+      stroke: C.hull,
+      strokeWidth: "1.3",
+      strokeLinejoin: "round"
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "7px 20px",
+        margin: "16px 0 0",
+        fontFamily: mono,
+        fontSize: 12
+      }
+    }, /*#__PURE__*/React.createElement(Stat, {
+      k: "Cap fully dry",
+      v: `${sim.stats.dry.toFixed(1)}s`,
+      bad: sim.stats.dry > 3
+    }), /*#__PURE__*/React.createElement(Stat, {
+      k: "Time under 20% cap",
+      v: `${sim.stats.lowCapS.toFixed(0)}s`,
+      bad: sim.stats.lowCapS > secs * 0.3
+    }), /*#__PURE__*/React.createElement(Stat, {
+      k: "Injected",
+      v: `${fmt(sim.stats.injected)} GJ (${sim.stats.charges} ch.)`
+    }), /*#__PURE__*/React.createElement(Stat, {
+      k: "Neuted away",
+      v: `${fmt(sim.stats.neuted)} GJ`
+    }), /*#__PURE__*/React.createElement(Stat, {
+      k: "Boosters left (cargo/fleet)",
+      v: `${sim.cargo} / ${sim.fleet}`,
+      bad: sim.cargo === 0 && sim.fleet === 0
+    }), /*#__PURE__*/React.createElement(Stat, {
+      k: "Wasted injects (>85% cap)",
+      v: sim.stats.wastedInj,
+      bad: sim.stats.wastedInj > 0
+    }), /*#__PURE__*/React.createElement(Stat, {
+      k: "Cap-starved deactivations",
+      v: sim.stats.capOuts,
+      bad: sim.stats.capOuts > 2
+    }), /*#__PURE__*/React.createElement(Stat, {
+      k: "Reps delivered",
+      v: `${fmt(sim.stats.repDone)} HP`
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        borderTop: `1px solid ${C.line}`,
+        marginTop: 14,
+        paddingTop: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: C.dim,
+        letterSpacing: 2,
+        marginBottom: 8
+      }
+    }, issues.length ? "WHAT TO FIX" : "DEBRIEF"), issues.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.green,
+        lineHeight: 1.6
+      }
+    }, "Clean flight — cap held, injections were efficient, nothing starved. Raise the neut pressure or DPS and go again.") : issues.slice(0, 4).map(([sev, text], i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 7
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 11,
+        fontWeight: 700,
+        color: i === 0 ? C.red : C.amber,
+        flexShrink: 0
+      }
+    }, i === 0 ? "▸ TOP" : "·"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: i === 0 ? C.text : C.dim,
+        lineHeight: 1.5
+      }
+    }, text)))));
   })(), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: "8px 20px",
-      margin: "16px 0",
-      fontFamily: mono,
-      fontSize: 12
-    }
-  }, /*#__PURE__*/React.createElement(Stat, {
-    k: "Time in peak zone (20-40%)",
-    v: `${sim.stats.sweet.toFixed(0)}s (${(100 * sim.stats.sweet / Math.max(1, sim.t)).toFixed(0)}%)`
-  }), /*#__PURE__*/React.createElement(Stat, {
-    k: "Cap fully dry",
-    v: `${sim.stats.dry.toFixed(1)}s`,
-    bad: sim.stats.dry > 3
-  }), /*#__PURE__*/React.createElement(Stat, {
-    k: "Neuted away",
-    v: `${fmt(sim.stats.neuted)} GJ`
-  }), /*#__PURE__*/React.createElement(Stat, {
-    k: "Injected",
-    v: `${fmt(sim.stats.injected)} GJ (${sim.stats.charges} charges)`
-  }), /*#__PURE__*/React.createElement(Stat, {
-    k: "Charges left in cargo",
-    v: sim.cargo,
-    bad: sim.cargo === 0
-  }), /*#__PURE__*/React.createElement(Stat, {
-    k: "Wasted injections (>85% cap)",
-    v: sim.stats.wastedInj,
-    bad: sim.stats.wastedInj > 0
-  }), /*#__PURE__*/React.createElement(Stat, {
-    k: "Cap-starved deactivations",
-    v: sim.stats.capOuts,
-    bad: sim.stats.capOuts > 2
-  }), /*#__PURE__*/React.createElement(Stat, {
-    k: "Reps delivered",
-    v: `${fmt(sim.stats.repDone)} HP`
-  }), /*#__PURE__*/React.createElement(Stat, {
-    k: "Objective uptime",
-    v: `${(100 * sim.stats.gunUp / Math.max(1, sim.t * Math.max(1, fit.modules.filter(m => m.kind === "gun" || m.kind === "remoteRep").length))).toFixed(0)}%`
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: C.dim,
-      lineHeight: 1.7,
-      borderTop: `1px solid ${C.line}`,
-      paddingTop: 12
-    }
-  }, sim.stats.dry > 3 && /*#__PURE__*/React.createElement("div", null, "· Your cap flatlined for ", sim.stats.dry.toFixed(0), "s. Shut down non-essentials ", /*#__PURE__*/React.createElement("i", null, "before"), " a neut wave lands, not after."), sim.stats.wastedInj > 0 && /*#__PURE__*/React.createElement("div", null, "· ", sim.stats.wastedInj, " booster charge(s) injected above 85% cap were mostly wasted overflow. Inject low, ideally under 50%."), sim.stats.sweet / Math.max(1, sim.t) < 0.15 && sim.stats.dry < 2 && /*#__PURE__*/React.createElement("div", null, "· You barely visited the 20-40% band — that's where passive regen peaks (~", (2.5 * fit.capMax / fit.capRechargeS).toFixed(0), " GJ/s). Riding high cap wastes regen."), sim.stats.capOuts > 2 && /*#__PURE__*/React.createElement("div", null, "· Modules cap-starved out ", sim.stats.capOuts, " times. Stagger cycles instead of running everything at once."), sim.result === "survived" && sim.stats.dry < 1 && sim.stats.wastedInj === 0 && /*#__PURE__*/React.createElement("div", null, "· Clean flight. Raise the neut count or DPS and try again.")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 10,
