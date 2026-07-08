@@ -3031,7 +3031,7 @@ function CapacitorTrainer() {
         letterSpacing: 2,
         marginBottom: 10
       }
-    }, "SHIP"), /*#__PURE__*/React.createElement("div", {
+    }, "EDIT SHIP DATA"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 10,
@@ -3103,28 +3103,7 @@ function CapacitorTrainer() {
         color: C.green,
         marginTop: 6
       }
-    }, "All-V skills already applied by default (presets + imports)."), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setFit({
-        ...fit,
-        capMax: Math.round(fit.capMax * 1.25),
-        capRechargeS: Math.round(fit.capRechargeS * 0.75),
-        shieldMax: Math.round(fit.shieldMax * 1.25),
-        armorMax: Math.round(fit.armorMax * 1.25),
-        hullMax: Math.round(fit.hullMax * 1.25)
-      }),
-      style: {
-        marginTop: 8,
-        background: "transparent",
-        border: `1px dashed ${C.line}`,
-        color: C.dim,
-        borderRadius: 6,
-        padding: "4px 10px",
-        fontFamily: mono,
-        fontSize: 10,
-        cursor: "pointer"
-      },
-      title: "Re-apply all-V skill multipliers (×1.25 cap/HP, ×0.75 recharge). Only needed if you pasted raw, unskilled base values."
-    }, "+ re-apply all-V skills (×1.25 cap & HP, ×0.75 recharge)")), /*#__PURE__*/React.createElement("div", {
+    }, "All-V skills already applied by default (presets + imports).")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.panel,
         border: `1px solid ${C.line}`,
@@ -4066,7 +4045,6 @@ function CapacitorTrainer() {
     }
     // prioritised coaching (worst first)
     const issues = [];
-    if (sim.stats.dry > 2) issues.push([sim.stats.dry + 100, `Cap flatlined ${sim.stats.dry.toFixed(0)}s — cut modules before neut waves`]);
     if (sim.stats.capOuts > 1) issues.push([sim.stats.capOuts + 50, `${sim.stats.capOuts} modules cap-starved — stagger cycles`]);
     if (sim.stats.wastedInj > 0) issues.push([sim.stats.wastedInj + 30, `${sim.stats.wastedInj} injects wasted >85% — inject under 50%`]);
     if (sweetPct < 15 && sim.stats.dry < 2) issues.push([10, `Only ${sweetPct}% in peak-regen band — ride cap lower`]);
