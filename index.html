@@ -1795,23 +1795,35 @@ function startCycle(sim, fit, m, log) {
   r.cycleEndT = sim.t + dur;
   r.cycleLen = dur;
 }
+const STACK_PEN = [1, 0.8691, 0.5706, 0.2830, 0.1060, 0.0301, 0.0069];
+function stackPenalty(n) {
+  return STACK_PEN[Math.min(n, STACK_PEN.length - 1)];
+}
 function effResist(sim, fit, layer) {
   const full = (layer === "shield" ? fit.resShield : layer === "armor" ? fit.resArmor : fit.resHull) || 0;
   let allProd = 1,
     actProd = 1,
-    has = false;
+    has = false,
+    nAct = 0;
   fit.modules.forEach(m => {
     if (m.hardLayer === layer && m.resonance) {
       has = true;
       allProd *= m.resonance;
-      if (sim.mods[m.id] && sim.mods[m.id].active) actProd *= m.resonance;
+      if (sim.mods[m.id] && sim.mods[m.id].active) {
+        actProd *= m.resonance;
+        nAct++;
+      }
     }
   });
   let resist = full;
   if (has && allProd > 0) resist = 1 - (1 - full) / allProd * actProd;
+  // Command-burst resist links (Shield Harmonizing / Armor Energizing) stack-penalized behind active hardeners
   const L = fit.links || {};
-  if (layer === "shield" && L.shieldRes) resist = 1 - (1 - resist) * 0.72; // Shield Harmonizing burst
-  if (layer === "armor" && L.armorRes) resist = 1 - (1 - resist) * 0.72; // Armor Energizing burst
+  const BURST_RES = 0.8106; // raw resonance (~+19% resist) before stacking penalty
+  if (layer === "shield" && L.shieldRes || layer === "armor" && L.armorRes) {
+    const eff = 1 - (1 - BURST_RES) * stackPenalty(nAct);
+    resist = 1 - (1 - resist) * eff;
+  }
   return Math.max(0, Math.min(0.99, resist));
 }
 function linkRepMult(fit, kind) {
