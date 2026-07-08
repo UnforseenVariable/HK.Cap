@@ -2832,7 +2832,12 @@ function CapacitorTrainer() {
         padding: "28px 24px",
         fontFamily: "system-ui, sans-serif"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("style", null, `
+          @keyframes undockGlow { 0%, 100% { box-shadow: 0 0 16px rgba(240,178,62,.30); } 50% { box-shadow: 0 0 34px rgba(240,178,62,.60); } }
+          .undock-btn { animation: undockGlow 3s ease-in-out infinite; transition: transform .14s ease, filter .14s ease; }
+          .undock-btn:hover { transform: translateY(-1px); filter: brightness(1.06); animation-duration: 1.7s; }
+          .undock-btn:active { transform: translateY(0); }
+        `), /*#__PURE__*/React.createElement("div", {
       style: {
         maxWidth: 1060,
         margin: "0 auto"
@@ -2867,6 +2872,7 @@ function CapacitorTrainer() {
       }
     }, "Pick a hull, tune the fit and threat, then fly the HUD. Default values simulate all-V skills — edit any field to match your Pyfa export for exact fidelity.")), /*#__PURE__*/React.createElement("button", {
       onClick: start,
+      className: "undock-btn",
       style: {
         flexShrink: 0,
         marginTop: 6,
@@ -2880,7 +2886,6 @@ function CapacitorTrainer() {
         fontWeight: 700,
         letterSpacing: 3,
         cursor: "pointer",
-        boxShadow: "0 0 26px rgba(240,178,62,.4)",
         textTransform: "uppercase"
       }
     }, "UNDOCK ▸")), /*#__PURE__*/React.createElement("div", {
