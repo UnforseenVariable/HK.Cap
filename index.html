@@ -11700,6 +11700,7 @@ function CapacitorTrainer() {
   const EVE_TOKEN_PROXY = "https://capschool-eve.liberalrhino.workers.dev/token"; // Cloudflare Worker endpoint
   const [eveAuth, setEveAuth] = useState(null);
   const [eveBusy, setEveBusy] = useState(false);
+  const [eveError, setEveError] = useState("");
   const eveLogin = () => {
     const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
     try {
@@ -11739,10 +11740,12 @@ function CapacitorTrainer() {
       saved = sessionStorage.getItem("eve_state");
     } catch (e) {}
     if (!state || state !== saved) {
+      setEveError("Sign-in state did not match. Click Log in to undock again.");
       clean();
       return;
     }
     setEveBusy(true);
+    setEveError("");
     (async () => {
       try {
         const r = await fetch(EVE_TOKEN_PROXY, {
@@ -11755,7 +11758,11 @@ function CapacitorTrainer() {
             redirect_uri: EVE_REDIRECT
           })
         });
-        const data = await r.json();
+        const data = await r.json().catch(() => ({}));
+        if (!data.access_token) {
+          setEveError("Sign-in failed at token exchange" + (data.error ? " (" + data.error + ")" : "") + ".");
+          return;
+        }
         let seg = data.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
         seg += "=".repeat((4 - seg.length % 4) % 4);
         const payload = JSON.parse(atob(seg));
@@ -11780,7 +11787,10 @@ function CapacitorTrainer() {
         try {
           sessionStorage.setItem("eve_auth", JSON.stringify(auth));
         } catch (e) {}
-      } catch (e) {} finally {
+        if (!auth.verified) setEveError(name + " is not in the authorized corporation.");
+      } catch (e) {
+        setEveError("Sign-in error: " + (e && e.message || "unknown"));
+      } finally {
         setEveBusy(false);
         clean();
       }
@@ -12319,7 +12329,7 @@ function CapacitorTrainer() {
         maxWidth: 1040,
         margin: "0 auto"
       }
-    }, (eveBusy || eveAuth) && /*#__PURE__*/React.createElement("div", {
+    }, (eveBusy || eveAuth || eveError) && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "flex-end",
@@ -12333,7 +12343,13 @@ function CapacitorTrainer() {
         fontSize: 11,
         color: C.dim
       }
-    }, "verifying with EVE…") : /*#__PURE__*/React.createElement("div", {
+    }, "verifying with EVE…") : !eveAuth && eveError ? /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 11,
+        color: C.red
+      }
+    }, eveError) : /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
