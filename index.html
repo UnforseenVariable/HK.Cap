@@ -1714,6 +1714,7 @@ function initSim(fit, scenario) {
     speed: 1,
     mods,
     neutNext: scenario.neuts.map(n => n.startS),
+    siegeStartT: fit.modules.some(m => m.kind === "siege") ? null : 0,
     lastNeutHit: -99,
     lastNeutAmt: 0,
     log: [{
@@ -1835,12 +1836,23 @@ function step(sim, fit, scenario, dt, log) {
   if (!sim.running || sim.ended) return sim;
   sim.t += dt;
 
+  // Threat & challenge clock only begin once Siege is activated
+  if (sim.siegeStartT == null && siegeOn(sim, fit)) {
+    sim.siegeStartT = sim.t;
+    scenario.neuts.forEach((n, i) => {
+      sim.neutNext[i] = sim.t + n.startS;
+    });
+    log("\u2694 Siege online \u2014 threat incoming.", "warn");
+  }
+  const combatOn = sim.siegeStartT != null;
+  const ct = combatOn ? sim.t - sim.siegeStartT : 0;
+
   // Passive recharge
   sim.cap = Math.min(fit.capMax, sim.cap + rechargeRate(sim.cap, fit.capMax, fit.capRechargeS) * dt);
   sim.shield = Math.min(effHpMax(fit, "shield"), sim.shield + rechargeRate(sim.shield, effHpMax(fit, "shield"), fit.shieldRechargeS) * dt);
 
   // Incoming damage
-  if (scenario.incomingDps > 0 && sim.t >= scenario.dpsStartS) {
+  if (scenario.incomingDps > 0 && combatOn && ct >= scenario.dpsStartS) {
     let raw = scenario.incomingDps * dt;
     const layers = [["shield", effResist(sim, fit, "shield")], ["armor", effResist(sim, fit, "armor")], ["hull", effResist(sim, fit, "hull")]];
     for (const [k, res] of layers) {
@@ -1857,8 +1869,8 @@ function step(sim, fit, scenario, dt, log) {
     }
   }
 
-  // Neut cycles
-  scenario.neuts.forEach((n, i) => {
+  // Neut cycles (only after siege engaged)
+  if (combatOn) scenario.neuts.forEach((n, i) => {
     while (sim.t >= sim.neutNext[i]) {
       const drain = n.amount * n.count * (1 - (fit.neutResist || 0));
       const before = sim.cap;
@@ -1906,25 +1918,27 @@ function step(sim, fit, scenario, dt, log) {
         r.spool = 0;
       } else startCycle(sim, fit, m, log);
     }
-    if (r.active && (m.kind === "gun" || m.kind === "remoteRep")) sim.stats.gunUp += dt;
+    if (combatOn && r.active && (m.kind === "gun" || m.kind === "remoteRep")) sim.stats.gunUp += dt;
   });
 
   // Stats
   const f = sim.cap / fit.capMax;
-  if (f >= 0.2 && f <= 0.4) sim.stats.sweet += dt;
-  if (f < 0.2) sim.stats.lowCapS += dt;
-  if (sim.cap <= 1) sim.stats.dry += dt;
-  if (f < sim.stats.minCap) sim.stats.minCap = f;
-  const bkt = Math.floor(sim.t * 2);
-  if (sim.hist && sim._lastBkt !== bkt) {
-    sim._lastBkt = bkt;
-    sim.hist.push({
-      t: sim.t,
-      c: f,
-      s: sim.shield / effHpMax(fit, "shield"),
-      a: sim.armor / effHpMax(fit, "armor"),
-      h: sim.hull / effHpMax(fit, "hull")
-    });
+  if (combatOn) {
+    if (f >= 0.2 && f <= 0.4) sim.stats.sweet += dt;
+    if (f < 0.2) sim.stats.lowCapS += dt;
+    if (sim.cap <= 1) sim.stats.dry += dt;
+    if (f < sim.stats.minCap) sim.stats.minCap = f;
+    const bkt = Math.floor(ct * 2);
+    if (sim.hist && sim._lastBkt !== bkt) {
+      sim._lastBkt = bkt;
+      sim.hist.push({
+        t: ct,
+        c: f,
+        s: sim.shield / effHpMax(fit, "shield"),
+        a: sim.armor / effHpMax(fit, "armor"),
+        h: sim.hull / effHpMax(fit, "hull")
+      });
+    }
   }
 
   // End conditions
@@ -1935,11 +1949,11 @@ function step(sim, fit, scenario, dt, log) {
     sim.deathCapPct = sim.cap / fit.capMax;
     sim.boostersGone = sim.cargo <= 0 && sim.fleet <= 0;
     log("💥 Ship destroyed.", "bad");
-  } else if (sim.t >= scenario.durationS) {
+  } else if (combatOn && ct >= scenario.durationS) {
     sim.ended = true;
     sim.result = "survived";
     sim.running = false;
-    log("✅ Scenario complete — you survived.", "good");
+    log("✅ Siege cycle complete — you survived.", "good");
   }
   return sim;
 }
@@ -3491,10 +3505,12 @@ function CapacitorTrainer() {
   if (!sim) return null;
   const regen = rechargeRate(sim.cap, fit.capMax, fit.capRechargeS);
   const modDrain = fit.modules.reduce((a, m) => sim.mods[m.id].active && m.capUse > 0 ? a + m.capUse / m.cycleS : a, 0);
-  const neutAvg = scenario.neuts.reduce((a, n) => sim.t >= n.startS - 3 ? a + n.amount * n.count * (1 - (fit.neutResist || 0)) / n.cycleS : a, 0);
+  const combatOn = sim.siegeStartT != null;
+  const ct = combatOn ? sim.t - sim.siegeStartT : 0;
+  const neutAvg = scenario.neuts.reduce((a, n) => combatOn && ct >= n.startS - 3 ? a + n.amount * n.count * (1 - (fit.neutResist || 0)) / n.cycleS : a, 0);
   const net = regen - modDrain - neutAvg;
   const neutFlash = sim.t - sim.lastNeutHit < 0.7;
-  const tRemain = Math.max(0, scenario.durationS - sim.t);
+  const tRemain = Math.max(0, scenario.durationS - ct);
   const rS = effResist(sim, fit, "shield"),
     rA = effResist(sim, fit, "armor"),
     rH = effResist(sim, fit, "hull");
@@ -3705,9 +3721,9 @@ function CapacitorTrainer() {
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: tRemain < 20 ? C.green : C.dim
+      color: !combatOn ? C.amber : tRemain < 20 ? C.green : C.dim
     }
-  }, "T−", tRemain.toFixed(0), "s"), /*#__PURE__*/React.createElement("button", {
+  }, !combatOn ? "\u2694 siege to begin" : `T\u2212${tRemain.toFixed(0)}s`), /*#__PURE__*/React.createElement("button", {
     onClick: () => setSim(p => ({
       ...p,
       running: !p.running
@@ -3735,7 +3751,31 @@ function CapacitorTrainer() {
       fontFamily: mono,
       fontSize: 11
     }
-  }, "refit"))), /*#__PURE__*/React.createElement("div", {
+  }, "refit"))), !combatOn && /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 720,
+      margin: "0 auto 12px",
+      background: "rgba(240,178,62,.08)",
+      border: `1px solid ${C.amber}`,
+      borderRadius: 8,
+      padding: "9px 14px",
+      display: "flex",
+      alignItems: "center",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: mono,
+      fontSize: 14
+    }
+  }, "\\u2694"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: mono,
+      fontSize: 11,
+      color: C.amber,
+      lineHeight: 1.5
+    }
+  }, "Set up your modules, then ", /*#__PURE__*/React.createElement("b", null, "activate Siege"), " to begin. No damage or neut pressure lands until siege is online — the 5:00 challenge clock starts then.")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 36,
@@ -3824,10 +3864,10 @@ function CapacitorTrainer() {
     }
   }, " · Siege ×4") : null), scenario.incomingDps > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
-      color: sim.t >= scenario.dpsStartS ? C.red : C.dim,
+      color: combatOn && ct >= scenario.dpsStartS ? C.red : C.dim,
       marginTop: 6
     }
-  }, "Incoming ", fmt(scenario.incomingDps), " DPS · ", sim.t < scenario.dpsStartS ? `In ${(scenario.dpsStartS - sim.t).toFixed(0)}s` : "Landing"), scenario.neuts.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Incoming ", fmt(scenario.incomingDps), " DPS · ", !combatOn ? "Holding" : ct < scenario.dpsStartS ? `In ${(scenario.dpsStartS - ct).toFixed(0)}s` : "Landing"), scenario.neuts.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       color: neutAvg > 0 ? C.red : C.dim
     }
@@ -3993,7 +4033,7 @@ function CapacitorTrainer() {
       letterSpacing: 2
     }
   }, sim.result === "survived" ? scenario.locked ? "CHALLENGE COMPLETE" : "SURVIVED" : "SHIP LOST"), (() => {
-    const secs = sim.t;
+    const secs = sim.siegeStartT != null ? sim.t - sim.siegeStartT : 0;
     const tier = secs >= 300 ? "ELITE" : secs >= 180 ? "VETERAN" : secs >= 90 ? "CAPABLE" : secs >= 45 ? "GREEN" : "ROOKIE";
     const tierColor = secs >= 180 ? C.green : secs >= 90 ? C.amber : C.red;
     const capUptime = Math.max(0, Math.round(100 * (1 - sim.stats.dry / Math.max(1, secs))));
