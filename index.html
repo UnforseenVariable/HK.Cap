@@ -4005,15 +4005,15 @@ function CapacitorTrainer() {
     // cause of death
     let cause = null;
     if (sim.result === "destroyed") {
-      if (sim.boostersGone && capEnd < 0.3) cause = "Out of cap boosters — cargo and fleet both empty, so nothing left to inject and your reps starved.";else if (sim.stats.capOuts > 0 && capEnd < 0.3) cause = "Cap starvation — your capacitor bottomed out, reps stopped cycling, and the tank collapsed.";else if (capEnd > 0.45) cause = "Overwhelmed by DPS — cap stayed healthy, incoming damage simply out-paced your reps. Tank harder or lower the threat.";else cause = "Cap + damage together — low cap throttled your reps while damage kept landing. Keeping reps cycling is the priority.";
+      if (sim.boostersGone && capEnd < 0.3) cause = "Out of cap boosters";else if (sim.stats.capOuts > 0 && capEnd < 0.3) cause = "Cap starvation";else if (capEnd > 0.45) cause = "DPS overwhelm";else cause = "Cap + DPS";
     }
     // prioritised coaching (worst first)
     const issues = [];
-    if (sim.stats.dry > 2) issues.push([sim.stats.dry + 100, `Cap flatlined for ${sim.stats.dry.toFixed(0)}s — reps can't run at 0 GJ. Shut non-essentials off BEFORE a neut wave lands, not after.`]);
-    if (sim.stats.capOuts > 1) issues.push([sim.stats.capOuts + 50, `${sim.stats.capOuts} modules cap-starved and deactivated. Stagger cycles and inject earlier so nothing drops off.`]);
-    if (sim.stats.wastedInj > 0) issues.push([sim.stats.wastedInj + 30, `${sim.stats.wastedInj} charge(s) injected above 85% cap — mostly overflow. Inject low, ideally under 50%, to bank the full 3,200 GJ.`]);
-    if (sweetPct < 15 && sim.stats.dry < 2) issues.push([10, `Only ${sweetPct}% of the fight sat in the 20-40% band where regen peaks (~${(2.5 * fit.capMax / fit.capRechargeS).toFixed(0)} GJ/s). Riding high cap wastes free regen.`]);
-    if (sim.cargo === 0 && sim.fleet === 0 && sim.result !== "survived") issues.push([40, "You burned every cap booster. Ration injections — reserve some for the heaviest neut spikes."]);
+    if (sim.stats.dry > 2) issues.push([sim.stats.dry + 100, `Cap flatlined ${sim.stats.dry.toFixed(0)}s — cut modules before neut waves`]);
+    if (sim.stats.capOuts > 1) issues.push([sim.stats.capOuts + 50, `${sim.stats.capOuts} modules cap-starved — stagger cycles`]);
+    if (sim.stats.wastedInj > 0) issues.push([sim.stats.wastedInj + 30, `${sim.stats.wastedInj} injects wasted >85% — inject under 50%`]);
+    if (sweetPct < 15 && sim.stats.dry < 2) issues.push([10, `Only ${sweetPct}% in peak-regen band — ride cap lower`]);
+    if (sim.cargo === 0 && sim.fleet === 0 && sim.result !== "survived") issues.push([40, "Out of boosters — ration injections"]);
     issues.sort((a, b) => b[0] - a[0]);
     const Metric = ({
       label,
@@ -4110,25 +4110,24 @@ function CapacitorTrainer() {
       }
     }, "· ", scenario.locked ? "survived the full siege cycle" : "outlasted the scenario")), cause && /*#__PURE__*/React.createElement("div", {
       style: {
-        marginTop: 12,
-        background: "rgba(224,85,72,.08)",
-        border: `1px solid ${C.red}`,
-        borderRadius: 8,
-        padding: "10px 12px"
+        marginTop: 10,
+        display: "flex",
+        alignItems: "center",
+        gap: 8
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
         color: C.red,
-        letterSpacing: 2,
-        marginBottom: 4
+        letterSpacing: 2
       }
-    }, "CAUSE OF LOSS"), /*#__PURE__*/React.createElement("div", {
+    }, "LOST TO"), /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 12.5,
-        color: C.text,
-        lineHeight: 1.5
+        fontFamily: mono,
+        fontSize: 14,
+        fontWeight: 700,
+        color: C.red
       }
     }, cause)), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -4340,45 +4339,26 @@ function CapacitorTrainer() {
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         borderTop: `1px solid ${C.line}`,
-        marginTop: 14,
-        paddingTop: 12
+        marginTop: 12,
+        paddingTop: 10,
+        fontSize: 12.5
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, issues.length === 0 ? /*#__PURE__*/React.createElement("span", {
       style: {
-        fontFamily: mono,
-        fontSize: 9,
-        color: C.dim,
-        letterSpacing: 2,
-        marginBottom: 8
+        color: C.green
       }
-    }, issues.length ? "WHAT TO FIX" : "DEBRIEF"), issues.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, "✓ Clean flight — raise the threat.") : /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 12,
-        color: C.green,
-        lineHeight: 1.6
-      }
-    }, "Clean flight — cap held, injections were efficient, nothing starved. Raise the neut pressure or DPS and go again.") : issues.slice(0, 4).map(([sev, text], i) => /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: {
-        display: "flex",
-        gap: 8,
-        marginBottom: 7
+        color: C.text
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
-        fontSize: 11,
-        fontWeight: 700,
-        color: i === 0 ? C.red : C.amber,
-        flexShrink: 0
+        fontSize: 10,
+        color: C.amber,
+        letterSpacing: 1
       }
-    }, i === 0 ? "▸ TOP" : "·"), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 12,
-        color: i === 0 ? C.text : C.dim,
-        lineHeight: 1.5
-      }
-    }, text)))));
+    }, "▸ FIX\xA0"), issues[0][1])));
   })(), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
