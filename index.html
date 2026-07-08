@@ -13433,7 +13433,7 @@ function CapacitorTrainer() {
         letterSpacing: 1,
         marginBottom: 10
       }
-    }, scenario.locked ? "MODULE RACK · BENCHMARK — loadout is fixed for fair comparison; only hotkeys and auto-repeat are adjustable" : "MODULE RACK — 24 slots · click a key chip to rebind its hotkey"), fit.modules.map((m, i) => /*#__PURE__*/React.createElement("div", {
+    }, scenario.locked ? "MODULE RACK · BENCHMARK — loadout is fixed for fair comparison; only hotkeys and auto-repeat are adjustable" : "MODULE RACK — 16 slots · click a key chip to rebind its hotkey"), fit.modules.map((m, i) => /*#__PURE__*/React.createElement("div", {
       key: m.id,
       style: {
         display: "flex",
@@ -13994,7 +13994,7 @@ function CapacitorTrainer() {
       maxWidth: isMobile ? "100%" : 660
     }
   }, Array.from({
-    length: 24
+    length: 16
   }, (_, s) => {
     const m = fit.modules.find(x => x.slot === s);
     return /*#__PURE__*/React.createElement("div", {
