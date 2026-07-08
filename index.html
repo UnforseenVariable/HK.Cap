@@ -2791,6 +2791,13 @@ function CapacitorTrainer() {
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 20
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
         fontFamily: mono,
         color: C.amber,
         fontSize: 11,
@@ -2810,7 +2817,25 @@ function CapacitorTrainer() {
         maxWidth: 640,
         lineHeight: 1.6
       }
-    }, "Pick a hull, tune the fit and threat, then fly the HUD. Default values simulate all-V skills — edit any field to match your Pyfa export for exact fidelity."), /*#__PURE__*/React.createElement("div", {
+    }, "Pick a hull, tune the fit and threat, then fly the HUD. Default values simulate all-V skills — edit any field to match your Pyfa export for exact fidelity.")), /*#__PURE__*/React.createElement("button", {
+      onClick: start,
+      style: {
+        flexShrink: 0,
+        marginTop: 6,
+        background: C.amber,
+        color: "#14100A",
+        border: "none",
+        borderRadius: 8,
+        padding: "14px 46px",
+        fontFamily: mono,
+        fontSize: 18,
+        fontWeight: 700,
+        letterSpacing: 3,
+        cursor: "pointer",
+        boxShadow: "0 0 26px rgba(240,178,62,.4)",
+        textTransform: "uppercase"
+      }
+    }, "UNDOCK ▸")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 10,
@@ -3437,22 +3462,7 @@ function CapacitorTrainer() {
         fontSize: 10,
         cursor: "pointer"
       }
-    }, "+ ", t.name)))), /*#__PURE__*/React.createElement("button", {
-      onClick: start,
-      style: {
-        marginTop: 18,
-        background: C.amber,
-        color: "#14100A",
-        border: "none",
-        borderRadius: 8,
-        padding: "12px 34px",
-        fontFamily: mono,
-        fontSize: 14,
-        fontWeight: 700,
-        letterSpacing: 2,
-        cursor: "pointer"
-      }
-    }, "UNDOCK ▸")));
+    }, "+ ", t.name))))));
   }
 
   // ---------- SIM ----------
