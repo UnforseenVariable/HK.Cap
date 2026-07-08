@@ -1366,10 +1366,10 @@ function makeStaggeredNeuts(gjs, n = 6, cycleS = 12, startS = 6) {
   return out;
 }
 const SCENARIOS = [{
-  name: "Endurance — how long can you last?",
-  blurb: "The standard test: 6 staggered Bhaalgorns hitting ~300 GJ/s each (~1,800 GJ/s total neut pressure) plus 60,000 raw DPS. Manage cap and reps to survive as long as possible. Your score is your survival time. (Fixed parameters — not editable.)",
+  name: "Endurance — survive one siege cycle",
+  blurb: "The standard test: hold out for one full siege cycle (5:00) against 6 staggered Bhaalgorns hitting ~300 GJ/s each (~1,800 GJ/s total neut pressure) plus 60,000 raw DPS. If the cycle ends and you're still alive, the challenge is complete. (Fixed parameters — not editable.)",
   locked: true,
-  durationS: 900,
+  durationS: 300,
   incomingDps: 60000,
   dpsStartS: 5,
   neuts: [{
@@ -3992,7 +3992,7 @@ function CapacitorTrainer() {
       color: sim.result === "survived" ? C.green : C.red,
       letterSpacing: 2
     }
-  }, sim.result === "survived" ? "SURVIVED" : "SHIP LOST"), (() => {
+  }, sim.result === "survived" ? scenario.locked ? "CHALLENGE COMPLETE" : "SURVIVED" : "SHIP LOST"), (() => {
     const secs = sim.t;
     const tier = secs >= 300 ? "ELITE" : secs >= 180 ? "VETERAN" : secs >= 90 ? "CAPABLE" : secs >= 45 ? "GREEN" : "ROOKIE";
     const tierColor = secs >= 180 ? C.green : secs >= 90 ? C.amber : C.red;
@@ -4108,7 +4108,7 @@ function CapacitorTrainer() {
         fontSize: 10,
         color: C.green
       }
-    }, "· outlasted the scenario")), cause && /*#__PURE__*/React.createElement("div", {
+    }, "· ", scenario.locked ? "survived the full siege cycle" : "outlasted the scenario")), cause && /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 12,
         background: "rgba(224,85,72,.08)",
