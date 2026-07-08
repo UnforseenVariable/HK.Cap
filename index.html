@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EVE Capital Capacitor Trainer</title>
+<meta name="description" content="Interactive EVE Online capital-ship capacitor and cap-management flight trainer.">
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
   #root { min-height: 100vh; }
@@ -1392,41 +1393,11 @@ const SCENARIOS = [{
   incomingDps: 2500,
   dpsStartS: 12,
   neuts: [{
-    label: "Bhaalgorn 1",
+    label: "Bhaalgorn heavy neuts",
     amount: 1800,
     cycleS: 24,
     startS: 12,
-    count: 1
-  }, {
-    label: "Bhaalgorn 2",
-    amount: 1800,
-    cycleS: 24,
-    startS: 16,
-    count: 1
-  }, {
-    label: "Bhaalgorn 3",
-    amount: 1800,
-    cycleS: 24,
-    startS: 20,
-    count: 1
-  }, {
-    label: "Bhaalgorn 4",
-    amount: 1800,
-    cycleS: 24,
-    startS: 24,
-    count: 1
-  }, {
-    label: "Bhaalgorn 5",
-    amount: 1800,
-    cycleS: 24,
-    startS: 28,
-    count: 1
-  }, {
-    label: "Bhaalgorn 6",
-    amount: 1800,
-    cycleS: 24,
-    startS: 32,
-    count: 1
+    count: 6
   }]
 }, {
   name: "Heavy Armor fleet",
@@ -1435,132 +1406,36 @@ const SCENARIOS = [{
   incomingDps: 25000,
   dpsStartS: 8,
   neuts: [{
-    label: "Bhaalgorn neut 1",
+    label: "Bhaalgorn neut line",
     amount: 1800,
     cycleS: 24,
     startS: 10,
-    count: 1
+    count: 8
   }, {
-    label: "Bhaalgorn neut 2",
-    amount: 1800,
-    cycleS: 24,
-    startS: 13,
-    count: 1
-  }, {
-    label: "Bhaalgorn neut 3",
-    amount: 1800,
-    cycleS: 24,
-    startS: 16,
-    count: 1
-  }, {
-    label: "Bhaalgorn neut 4",
-    amount: 1800,
-    cycleS: 24,
-    startS: 19,
-    count: 1
-  }, {
-    label: "Bhaalgorn neut 5",
-    amount: 1800,
-    cycleS: 24,
-    startS: 22,
-    count: 1
-  }, {
-    label: "Bhaalgorn neut 6",
-    amount: 1800,
-    cycleS: 24,
-    startS: 25,
-    count: 1
-  }, {
-    label: "Bhaalgorn neut 7",
-    amount: 1800,
-    cycleS: 24,
-    startS: 28,
-    count: 1
-  }, {
-    label: "Bhaalgorn neut 8",
-    amount: 1800,
-    cycleS: 24,
-    startS: 31,
-    count: 1
-  }, {
-    label: "Medium neut 1",
+    label: "Support medium neuts",
     amount: 480,
     cycleS: 12,
     startS: 15,
-    count: 1
-  }, {
-    label: "Medium neut 2",
-    amount: 480,
-    cycleS: 12,
-    startS: 17,
-    count: 1
-  }, {
-    label: "Medium neut 3",
-    amount: 480,
-    cycleS: 12,
-    startS: 19,
-    count: 1
-  }, {
-    label: "Medium neut 4",
-    amount: 480,
-    cycleS: 12,
-    startS: 21,
-    count: 1
-  }, {
-    label: "Medium neut 5",
-    amount: 480,
-    cycleS: 12,
-    startS: 23,
-    count: 1
-  }, {
-    label: "Medium neut 6",
-    amount: 480,
-    cycleS: 12,
-    startS: 25,
-    count: 1
+    count: 6
   }]
 }, {
   name: "Dreadbomb (capital neuts)",
-  blurb: "You got dropped. A wing of dreads lands with capital neutralizers — staggered 4,400 GJ capital-neut spikes every 8s plus ~55k DPS. Survive the opening; burn injectors hard.",
+  blurb: "You got dropped. A wing of dreads lands with capital neutralizers and enormous alpha — huge 4,400 GJ capital-neut spikes plus ~55k DPS. Survive the opening; burn injectors hard.",
   durationS: 180,
   incomingDps: 55000,
   dpsStartS: 6,
   neuts: [{
-    label: "Capital neut 1",
+    label: "Capital neuts (first volley)",
     amount: 4400,
     cycleS: 48,
     startS: 12,
-    count: 1
+    count: 3
   }, {
-    label: "Capital neut 2",
-    amount: 4400,
-    cycleS: 48,
-    startS: 20,
-    count: 1
-  }, {
-    label: "Capital neut 3",
-    amount: 4400,
-    cycleS: 48,
-    startS: 28,
-    count: 1
-  }, {
-    label: "Capital neut 4",
+    label: "Capital neuts (second volley)",
     amount: 4400,
     cycleS: 48,
     startS: 36,
-    count: 1
-  }, {
-    label: "Capital neut 5",
-    amount: 4400,
-    cycleS: 48,
-    startS: 44,
-    count: 1
-  }, {
-    label: "Capital neut 6",
-    amount: 4400,
-    cycleS: 48,
-    startS: 52,
-    count: 1
+    count: 3
   }]
 }, {
   name: "Capital neut duel (1v1)",
@@ -3458,11 +3333,7 @@ function CapacitorTrainer() {
       padding: 18,
       fontFamily: "system-ui, sans-serif"
     }
-  }, /*#__PURE__*/React.createElement("style", null, `@media (prefers-reduced-motion: no-preference) { @keyframes capReload { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.88); } } }
-        #root { zoom: 1.5; }
-        @media (max-width: 1680px) { #root { zoom: 1.3; } }
-        @media (max-width: 1440px) { #root { zoom: 1.15; } }
-        @media (max-width: 1200px) { #root { zoom: 1; } }`), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("style", null, `@media (prefers-reduced-motion: no-preference) { @keyframes capReload { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.88); } } }`), /*#__PURE__*/React.createElement("div", {
     style: {
       maxWidth: 1080,
       margin: "0 auto"
