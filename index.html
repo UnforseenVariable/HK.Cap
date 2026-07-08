@@ -11922,7 +11922,7 @@ function CapacitorTrainer() {
         Object.keys(s.mods).forEach(k => s.mods[k] = {
           ...s.mods[k]
         });
-        if (tickMode) {
+        if (tickMode || scnRef.current && scnRef.current.locked) {
           // 1 Hz server tick: logic resolves in whole seconds, displayT advances smoothly for animation
           s.displayT = (s.displayT != null ? s.displayT : s.t) + 0.1 * s.speed;
           s.tickAccum = (s.tickAccum || 0) + 0.1 * s.speed;
@@ -12724,6 +12724,7 @@ function CapacitorTrainer() {
           const sc = JSON.parse(JSON.stringify(s));
           setScenario(sc);
           if (sc.locked) {
+            setTickMode(true);
             const shield = String(fit.name || "").toLowerCase().includes("phoenix");
             setFit(f => ({
               ...f,
@@ -12986,22 +12987,26 @@ function CapacitorTrainer() {
         gap: 10,
         flexWrap: "wrap"
       }
-    }, [["1 Hz · Tranquility", true], ["Smooth", false]].map(([label, v]) => /*#__PURE__*/React.createElement("button", {
-      key: label,
-      onClick: () => setTickMode(v),
-      style: {
-        background: tickMode === v ? C.amber : "transparent",
-        color: tickMode === v ? "#14100A" : C.dim,
-        fontWeight: tickMode === v ? 700 : 400,
-        border: `1px solid ${tickMode === v ? C.amber : C.line}`,
-        borderRadius: 7,
-        padding: "7px 14px",
-        fontFamily: mono,
-        fontSize: 11,
-        cursor: "pointer",
-        whiteSpace: "nowrap"
-      }
-    }, label)), /*#__PURE__*/React.createElement("span", {
+    }, [["1 Hz · Tranquility", true], ["Smooth", false]].filter(([label, v]) => !scenario.locked || v === true).map(([label, v]) => {
+      const tl = scenario.locked;
+      const sel = tl ? true : tickMode === v;
+      return /*#__PURE__*/React.createElement("button", {
+        key: label,
+        onClick: tl ? undefined : () => setTickMode(v),
+        style: {
+          background: sel ? C.amber : "transparent",
+          color: sel ? "#14100A" : C.dim,
+          fontWeight: sel ? 700 : 400,
+          border: `1px solid ${sel ? C.amber : C.line}`,
+          borderRadius: 7,
+          padding: "7px 14px",
+          fontFamily: mono,
+          fontSize: 11,
+          cursor: tl ? "default" : "pointer",
+          whiteSpace: "nowrap"
+        }
+      }, tl ? "🔒 " : "", label);
+    }), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 10,
@@ -13009,7 +13014,7 @@ function CapacitorTrainer() {
         flex: 1,
         minWidth: 200
       }
-    }, tickMode ? "Modules resolve once per second, like the server — time injects to land on a tick." : "Continuous sim — smoother, but not TQ-accurate.")), /*#__PURE__*/React.createElement("div", {
+    }, scenario.locked ? "Locked to 1 Hz for the benchmark — matches Tranquility." : tickMode ? "Modules resolve once per second, like the server — time injects to land on a tick." : "Continuous sim — smoother, but not TQ-accurate.")), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 24
       }
