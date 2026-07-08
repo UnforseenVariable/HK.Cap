@@ -1808,7 +1808,7 @@ function effResist(sim, fit, layer) {
 }
 function linkRepMult(fit, kind) {
   const L = fit.links || {};
-  if (kind === "shieldBooster" && L.shieldRep) return 1.3; // Active Shielding burst
+  // Command-burst rep bonuses do NOT apply to capital-class local reps, so shield boosters get nothing.
   if ((kind === "armorRep" || kind === "remoteRep") && L.armorRep) return 1.3; // Rapid Repair burst
   return 1;
 }
@@ -2543,7 +2543,7 @@ function CapacitorTrainer() {
         const r = s.mods[m.id] = {
           ...s.mods[m.id]
         };
-        if (r.reloadEndT === 0 && r.charges < (m.maxCharges || 0) && s.cargo > 0) {
+        if (r.reloadEndT === 0 && !r.active && r.charges < (m.maxCharges || 0) && s.cargo > 0) {
           const take = Math.min((m.maxCharges || 0) - r.charges, s.cargo);
           s.cargo -= take;
           r.reloadAmt = take;
@@ -2581,7 +2581,7 @@ function CapacitorTrainer() {
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [screen, toggleModule, reloadBoosters]);
-  const manualReloadOne = useCallback(id => {
+  const manualReloadOne = useCallback((id, source = "cargo") => {
     setSim(prev => {
       if (!prev || prev.ended) return prev;
       const s = {
@@ -2596,21 +2596,27 @@ function CapacitorTrainer() {
         ...s.mods[id]
       };
       if (r.reloadEndT > 0) return prev;
+      if (r.active) {
+        pushLog(s, `${m.name}: can't reload while cycling — deactivate it first`, "bad");
+        return s;
+      }
       if (r.charges >= (m.maxCharges || 0)) {
         pushLog(s, `${m.name}: already fully loaded`, "info");
         return s;
       }
-      if (s.cargo <= 0) {
-        pushLog(s, "Cargo hold empty — no Cap Booster 3200s left", "bad");
+      const pool = source === "fleet" ? "fleet" : "cargo";
+      const label = pool === "fleet" ? "fleet hangar" : "cargo";
+      if (s[pool] <= 0) {
+        pushLog(s, `${pool === "fleet" ? "Fleet hangar" : "Cargo hold"} empty — no Cap Booster 3200s left`, "bad");
         return s;
       }
-      const take = Math.min((m.maxCharges || 0) - r.charges, s.cargo);
-      s.cargo -= take;
+      const take = Math.min((m.maxCharges || 0) - r.charges, s[pool]);
+      s[pool] -= take;
       r.reloadAmt = take;
       r.active = false;
       r.wantOff = false;
       r.reloadEndT = s.t + (m.reloadS || 10);
-      pushLog(s, `${m.name}: pulling ${take} from cargo — ${s.cargo} left`, "info");
+      pushLog(s, `${m.name}: pulling ${take} from ${label} — ${s[pool]} left`, "info");
       return s;
     });
   }, [pushLog]);
@@ -3256,9 +3262,6 @@ function CapacitorTrainer() {
       k: "shieldRes",
       label: "Shield Harmonizing · +resist"
     }, {
-      k: "shieldRep",
-      label: "Active Shielding · +shield boost"
-    }, {
       k: "shieldHp",
       label: "Shield Extension · +shield HP"
     }, {
@@ -3571,7 +3574,7 @@ function CapacitorTrainer() {
       setDragKind(null);
       setHoverSlot(null);
     },
-    title: h.key === "cargo" ? "Drag onto a booster to reload it, or onto the fleet hangar to unload" : "Drag onto the cargo hold to load charges",
+    title: h.key === "cargo" ? "Drag onto a booster to reload it, or onto the fleet hangar to unload" : "Drag onto a booster to reload it from fleet, or onto the cargo hold to transfer",
     style: {
       display: "flex",
       alignItems: "center",
@@ -3820,7 +3823,6 @@ function CapacitorTrainer() {
     return /*#__PURE__*/React.createElement("div", {
       key: s,
       onDragOver: e => {
-        if (dragKind === "fleet") return;
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
         if (hoverSlot !== s) setHoverSlot(s);
@@ -3830,7 +3832,9 @@ function CapacitorTrainer() {
         e.preventDefault();
         const id = dragId.current || e.dataTransfer.getData("text/plain");
         if (id === "__cargo__") {
-          if (m && m.kind === "capBooster") manualReloadOne(m.id);
+          if (m && m.kind === "capBooster") manualReloadOne(m.id, "cargo");
+        } else if (id === "__fleet__") {
+          if (m && m.kind === "capBooster") manualReloadOne(m.id, "fleet");
         } else if (id && !id.startsWith("__")) moveToSlot(id, s);
         dragId.current = null;
         setDragKind(null);
@@ -3842,9 +3846,9 @@ function CapacitorTrainer() {
         display: "flex",
         justifyContent: "center",
         alignItems: "flex-start",
-        outline: hoverSlot === s ? `1px dashed ${dragKind === "cargo" ? C.amber : C.green}` : "1px dashed transparent",
+        outline: hoverSlot === s ? `1px dashed ${dragKind === "cargo" || dragKind === "fleet" ? C.amber : C.green}` : "1px dashed transparent",
         outlineOffset: -2,
-        background: hoverSlot === s ? dragKind === "cargo" ? "rgba(240,178,62,.06)" : "rgba(127,219,122,.05)" : "transparent",
+        background: hoverSlot === s ? dragKind === "cargo" || dragKind === "fleet" ? "rgba(240,178,62,.06)" : "rgba(127,219,122,.05)" : "transparent",
         transition: "background .1s"
       }
     }, m ? /*#__PURE__*/React.createElement("div", {
