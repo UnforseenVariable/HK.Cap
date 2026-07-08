@@ -13229,7 +13229,8 @@ function CapacitorTrainer() {
   const ct = combatOn ? sim.t - sim.siegeStartT : 0;
   const neutAvg = scenario.neuts.reduce((a, n) => combatOn && ct >= n.startS - 3 ? a + n.amount * n.count * (1 - (fit.neutResist || 0)) / n.cycleS : a, 0);
   const net = regen - modDrain - neutAvg;
-  const _tf = tickMode ? Math.max(0, Math.min(1, sim.tickAccum || 0)) : 1;
+  const _tfRaw = tickMode ? Math.max(0, Math.min(1, (sim.tickAccum || 0) / 0.3)) : 1;
+  const _tf = 1 - (1 - _tfRaw) * (1 - _tfRaw);
   const _lerp = (a, b) => a == null ? b : a + (b - a) * _tf;
   const dShield = _lerp(sim.shieldPrev, sim.shield);
   const dArmor = _lerp(sim.armorPrev, sim.armor);
