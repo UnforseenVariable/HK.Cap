@@ -11681,139 +11681,6 @@ function CapacitorTrainer() {
     } catch (e) {}
     setShowOnboarding(false);
   };
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(max-width: 700px)");
-    const on = () => setIsMobile(mq.matches);
-    on();
-    if (mq.addEventListener) mq.addEventListener("change", on);else mq.addListener(on);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener("change", on);else mq.removeListener(on);
-    };
-  }, []);
-  useEffect(() => {
-    if (!scenario.locked) return;
-    const shield = String(fit.name || "").toLowerCase().includes("phoenix");
-    setFit(f => ({
-      ...f,
-      links: shield ? {
-        shieldRes: true,
-        shieldHp: true,
-        armorRes: false,
-        armorHp: false
-      } : {
-        shieldRes: false,
-        shieldHp: false,
-        armorRes: true,
-        armorHp: true
-      }
-    }));
-  }, [scenario.locked, fit.name]);
-
-  // ---- EVE SSO corp verification (soft gate) ----
-  const EVE_CLIENT_ID = "088cf54a118d4a8ebba8735453bd4f69";
-  const EVE_CORP_ID = 98040755;
-  const EVE_REDIRECT = "https://capschool.app/";
-  const EVE_TOKEN_PROXY = "https://capschool-eve.liberalrhino.workers.dev/token"; // Cloudflare Worker endpoint
-  const [eveAuth, setEveAuth] = useState(null);
-  const [eveBusy, setEveBusy] = useState(false);
-  const [eveError, setEveError] = useState("");
-  const eveLogin = () => {
-    const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    try {
-      sessionStorage.setItem("eve_state", state);
-    } catch (e) {}
-    window.location.href = "https://login.eveonline.com/v2/oauth/authorize/?" + new URLSearchParams({
-      response_type: "code",
-      redirect_uri: EVE_REDIRECT,
-      client_id: EVE_CLIENT_ID,
-      scope: "publicData",
-      state
-    }).toString();
-  };
-  const eveLogout = () => {
-    setEveAuth(null);
-    try {
-      sessionStorage.removeItem("eve_auth");
-    } catch (e) {}
-  };
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const s = sessionStorage.getItem("eve_auth");
-      if (s) setEveAuth(JSON.parse(s));
-    } catch (e) {}
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const state = params.get("state");
-    if (!code) return;
-    const clean = () => {
-      try {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } catch (e) {}
-    };
-    let saved = null;
-    try {
-      saved = sessionStorage.getItem("eve_state");
-    } catch (e) {}
-    if (!state || state !== saved) {
-      setEveError("Sign-in state did not match. Click Log in to undock again.");
-      clean();
-      return;
-    }
-    setEveBusy(true);
-    setEveError("");
-    (async () => {
-      try {
-        const r = await fetch(EVE_TOKEN_PROXY, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            code,
-            redirect_uri: EVE_REDIRECT
-          })
-        });
-        const data = await r.json().catch(() => ({}));
-        if (!data.access_token) {
-          setEveError("Sign-in failed at token exchange" + (data.error ? " (" + data.error + ")" : "") + ".");
-          return;
-        }
-        let seg = data.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-        seg += "=".repeat((4 - seg.length % 4) % 4);
-        const payload = JSON.parse(atob(seg));
-        const charId = String(payload.sub || "").split(":").pop();
-        const name = payload.name || "Pilot";
-        const cr = await fetch("https://esi.evetech.net/latest/characters/" + charId + "/?datasource=tranquility");
-        const cj = await cr.json();
-        const corpId = cj.corporation_id;
-        let corpName = "corp " + corpId;
-        try {
-          const nr = await fetch("https://esi.evetech.net/latest/corporations/" + corpId + "/?datasource=tranquility");
-          const nj = await nr.json();
-          if (nj && nj.name) corpName = nj.name;
-        } catch (e) {}
-        const auth = {
-          name,
-          corpId,
-          corpName,
-          verified: corpId === EVE_CORP_ID
-        };
-        setEveAuth(auth);
-        try {
-          sessionStorage.setItem("eve_auth", JSON.stringify(auth));
-        } catch (e) {}
-        if (!auth.verified) setEveError(name + " is not in the authorized corporation.");
-      } catch (e) {
-        setEveError("Sign-in error: " + (e && e.message || "unknown"));
-      } finally {
-        setEveBusy(false);
-        clean();
-      }
-    })();
-  }, []);
   const dragId = useRef(null);
   const [hoverSlot, setHoverSlot] = useState(null);
   const [dragKind, setDragKind] = useState(null);
@@ -12081,10 +11948,6 @@ function CapacitorTrainer() {
     };
   }, [draggingCharges]);
   const start = () => {
-    if (!eveAuth || !eveAuth.verified) {
-      eveLogin();
-      return;
-    }
     setSim(initSim(fit, scenario));
     setScreen("sim");
   };
@@ -12347,56 +12210,7 @@ function CapacitorTrainer() {
         maxWidth: 1040,
         margin: "0 auto"
       }
-    }, (eveBusy || eveAuth || eveError) && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        justifyContent: "flex-end",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 6
-      }
-    }, eveBusy ? /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: mono,
-        fontSize: 11,
-        color: C.dim
-      }
-    }, "verifying with EVE…") : !eveAuth && eveError ? /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: mono,
-        fontSize: 11,
-        color: C.red
-      }
-    }, eveError) : /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: mono,
-        fontSize: 11,
-        padding: "5px 12px",
-        borderRadius: 20,
-        border: `1px solid ${eveAuth.verified ? C.green : C.amber}`,
-        color: eveAuth.verified ? C.green : C.amber,
-        background: eveAuth.verified ? "rgba(127,219,122,.08)" : "rgba(240,178,62,.08)"
-      }
-    }, eveAuth.verified ? `✓ ${eveAuth.corpName}` : "not in corp", " · ", eveAuth.name), /*#__PURE__*/React.createElement("button", {
-      onClick: eveLogout,
-      style: {
-        fontFamily: mono,
-        fontSize: 11,
-        background: "transparent",
-        border: "none",
-        color: C.dim,
-        cursor: "pointer",
-        textDecoration: "underline",
-        textUnderlineOffset: 3,
-        padding: 0
-      }
-    }, "log out"))), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
@@ -12431,22 +12245,15 @@ function CapacitorTrainer() {
         textDecoration: "underline",
         textUnderlineOffset: 3
       }
-    }, "How it works")), /*#__PURE__*/React.createElement("div", {
+    }, "How it works")), /*#__PURE__*/React.createElement("button", {
+      onClick: start,
+      className: "undock-btn",
       style: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-end",
-        gap: 6,
+        flexShrink: 0,
         marginTop: 8,
-        flexShrink: 0
-      }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => eveAuth && eveAuth.verified ? start() : eveLogin(),
-      className: eveAuth && eveAuth.verified ? "undock-btn" : "",
-      style: {
-        background: eveAuth && eveAuth.verified ? C.amber : "transparent",
-        color: eveAuth && eveAuth.verified ? "#14100A" : C.amber,
-        border: eveAuth && eveAuth.verified ? "none" : `1px solid ${C.amber}`,
+        background: C.amber,
+        color: "#14100A",
+        border: "none",
         borderRadius: 10,
         padding: "15px 48px",
         fontFamily: mono,
@@ -12456,14 +12263,7 @@ function CapacitorTrainer() {
         cursor: "pointer",
         textTransform: "uppercase"
       }
-    }, eveAuth && eveAuth.verified ? "UNDOCK ▸" : "🔒 Log in to undock"), !(eveAuth && eveAuth.verified) && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: mono,
-        fontSize: 9,
-        color: C.dim,
-        letterSpacing: 1
-      }
-    }, "corp verification required to fly"))), /*#__PURE__*/React.createElement("div", {
+    }, "UNDOCK ▸")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 10,
@@ -12840,7 +12640,7 @@ function CapacitorTrainer() {
         letterSpacing: 0,
         textTransform: "none"
       }
-    }, scenario.locked ? "· online for benchmark" : "· optional")), /*#__PURE__*/React.createElement("div", {
+    }, "· optional")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.panel,
         border: `1px solid ${C.line}`,
@@ -12855,27 +12655,22 @@ function CapacitorTrainer() {
       }
     }, [{
       k: "shieldRes",
-      label: "Shield Harmonizing",
-      layer: "shield"
+      label: "Shield Harmonizing"
     }, {
       k: "shieldHp",
-      label: "Shield Extension",
-      layer: "shield"
+      label: "Shield Extension"
     }, {
       k: "armorRes",
-      label: "Armor Energizing",
-      layer: "armor"
+      label: "Armor Energizing"
     }, {
       k: "armorHp",
-      label: "Armor Reinforcement",
-      layer: "armor"
-    }].filter(L => !scenario.locked || L.layer === (String(fit.name || "").toLowerCase().includes("phoenix") ? "shield" : "armor")).map(L => {
-      const locked = scenario.locked;
-      const on = locked ? true : (fit.links || {})[L.k];
+      label: "Armor Reinforcement"
+    }].map(L => {
+      const on = (fit.links || {})[L.k];
       return /*#__PURE__*/React.createElement("button", {
         key: L.k,
-        className: locked ? "" : "chip",
-        onClick: locked ? undefined : () => setF("links", {
+        className: "chip",
+        onClick: () => setF("links", {
           ...(fit.links || {}),
           [L.k]: !on
         }),
@@ -12887,10 +12682,10 @@ function CapacitorTrainer() {
           padding: "7px 12px",
           fontFamily: mono,
           fontSize: 11,
-          cursor: locked ? "default" : "pointer",
+          cursor: "pointer",
           whiteSpace: "nowrap"
         }
-      }, locked ? "🔒 " : on ? "✓ " : "", L.label);
+      }, on ? "✓ " : "", L.label);
     }))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 24
@@ -12924,11 +12719,11 @@ function CapacitorTrainer() {
       style: {
         fontFamily: mono,
         fontSize: 10,
-        color: scenario.locked ? C.amber : C.dim,
+        color: C.dim,
         letterSpacing: 1,
         marginBottom: 10
       }
-    }, scenario.locked ? "MODULE RACK · BENCHMARK — loadout is fixed for fair comparison; only hotkeys and auto-repeat are adjustable" : "MODULE RACK — 10 slots · click a key chip to rebind its hotkey"), fit.modules.map((m, i) => /*#__PURE__*/React.createElement("div", {
+    }, "MODULE RACK — 10 slots · click a key chip to rebind its hotkey"), fit.modules.map((m, i) => /*#__PURE__*/React.createElement("div", {
       key: m.id,
       style: {
         display: "flex",
@@ -12941,41 +12736,7 @@ function CapacitorTrainer() {
     }, /*#__PURE__*/React.createElement(HotkeyField, {
       value: m.hotkey || "",
       onChange: v => setMod(m.id, "hotkey", v)
-    }), scenario.locked ? /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        flexWrap: "wrap"
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: mono,
-        fontSize: 10,
-        color: KIND_META[m.kind].color,
-        width: 34
-      }
-    }, KIND_META[m.kind].label), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: mono,
-        fontSize: 11,
-        color: C.text
-      }
-    }, m.name), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setMod(m.id, "autoRepeat", !m.autoRepeat),
-      title: "Toggle auto-repeat",
-      style: {
-        background: m.autoRepeat ? "#14210F" : "#25110F",
-        border: `1px solid ${m.autoRepeat ? C.green : C.red}`,
-        color: m.autoRepeat ? C.green : C.red,
-        borderRadius: 4,
-        padding: "4px 7px",
-        fontFamily: mono,
-        fontSize: 11,
-        cursor: "pointer",
-        whiteSpace: "nowrap"
-      }
-    }, m.autoRepeat ? "↻ auto" : "✕ once")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       onClick: () => setMod(m.id, "autoRepeat", !m.autoRepeat),
       title: "Toggle auto-repeat",
       style: {
@@ -13074,7 +12835,7 @@ function CapacitorTrainer() {
         fontFamily: mono,
         fontSize: 12
       }
-    }, "✕")))), !scenario.locked && /*#__PURE__*/React.createElement("div", {
+    }, "✕"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 6,
@@ -13273,55 +13034,6 @@ function CapacitorTrainer() {
       color: h.n > 5 ? C.amber : h.n > 0 ? C.red : "#5A5F66"
     }
   }, "×", h.n)))));
-  const defensePanel = /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 300,
-      background: C.panel,
-      border: `1px solid ${C.line}`,
-      borderRadius: 8,
-      padding: 12
-    }
-  }, /*#__PURE__*/React.createElement(Bar, {
-    label: "SHIELD",
-    value: sim.shield,
-    max: effHpMax(fit, "shield"),
-    color: C.cyan
-  }), /*#__PURE__*/React.createElement(Bar, {
-    label: "ARMOR",
-    value: sim.armor,
-    max: effHpMax(fit, "armor"),
-    color: C.armor
-  }), /*#__PURE__*/React.createElement(Bar, {
-    label: "HULL",
-    value: sim.hull,
-    max: effHpMax(fit, "hull"),
-    color: C.hull
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: mono,
-      fontSize: 10,
-      color: C.dim,
-      marginTop: 8,
-      lineHeight: 1.85
-    }
-  }, /*#__PURE__*/React.createElement("div", null, "EHP ", fmt(ehpTotal), " · Resist ", Math.round(rS * 100), "/", Math.round(rA * 100), "/", Math.round(rH * 100), "% S/A/H"), /*#__PURE__*/React.createElement("div", null, "Local Reps ", /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: localTank > 0 ? C.green : C.text
-    }
-  }, fmt(localTank), " EHP/s"), sgOn ? /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: C.amber
-    }
-  }, " · Siege ×4") : null), scenario.incomingDps > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: combatOn && ct >= scenario.dpsStartS ? C.red : C.dim,
-      marginTop: 6
-    }
-  }, "Incoming ", fmt(scenario.incomingDps), " DPS · ", !combatOn ? "Holding" : ct < scenario.dpsStartS ? `In ${(scenario.dpsStartS - ct).toFixed(0)}s` : "Landing"), scenario.neuts.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: neutAvg > 0 ? C.red : C.dim
-    }
-  }, "Neut Pressure −", neutAvg.toFixed(0), " GJ/s")));
   return /*#__PURE__*/React.createElement("div", {
     style: {
       minHeight: "100vh",
@@ -13472,7 +13184,55 @@ function CapacitorTrainer() {
       ...p,
       speed: s
     }))
-  }), !isMobile && defensePanel), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 300,
+      background: C.panel,
+      border: `1px solid ${C.line}`,
+      borderRadius: 8,
+      padding: 12
+    }
+  }, /*#__PURE__*/React.createElement(Bar, {
+    label: "SHIELD",
+    value: sim.shield,
+    max: effHpMax(fit, "shield"),
+    color: C.cyan
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "ARMOR",
+    value: sim.armor,
+    max: effHpMax(fit, "armor"),
+    color: C.armor
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "HULL",
+    value: sim.hull,
+    max: effHpMax(fit, "hull"),
+    color: C.hull
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: mono,
+      fontSize: 10,
+      color: C.dim,
+      marginTop: 8,
+      lineHeight: 1.85
+    }
+  }, /*#__PURE__*/React.createElement("div", null, "EHP ", fmt(ehpTotal), " · Resist ", Math.round(rS * 100), "/", Math.round(rA * 100), "/", Math.round(rH * 100), "% S/A/H"), /*#__PURE__*/React.createElement("div", null, "Local Reps ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: localTank > 0 ? C.green : C.text
+    }
+  }, fmt(localTank), " EHP/s"), sgOn ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.amber
+    }
+  }, " · Siege ×4") : null), scenario.incomingDps > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: combatOn && ct >= scenario.dpsStartS ? C.red : C.dim,
+      marginTop: 6
+    }
+  }, "Incoming ", fmt(scenario.incomingDps), " DPS · ", !combatOn ? "Holding" : ct < scenario.dpsStartS ? `In ${(scenario.dpsStartS - ct).toFixed(0)}s` : "Landing"), scenario.neuts.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: neutAvg > 0 ? C.red : C.dim
+    }
+  }, "Neut Pressure −", neutAvg.toFixed(0), " GJ/s")))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
@@ -13576,7 +13336,7 @@ function CapacitorTrainer() {
       maxWidth: 356,
       lineHeight: 1.6
     }
-  }, "Right-click a module = toggle auto-repeat (red ✕ = off) · Drag to rearrange · R = reload · Space = pause · −/+ on gauge = sim speed")), isMobile && defensePanel), (() => {
+  }, "Right-click a module = toggle auto-repeat (red ✕ = off) · Drag to rearrange · R = reload · Space = pause · −/+ on gauge = sim speed"))), (() => {
     const H = sim.hist || [];
     const maxT = Math.max(30, ct);
     const W = 696,
@@ -13835,108 +13595,60 @@ function CapacitorTrainer() {
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        textAlign: "center",
-        padding: "18px 16px 16px",
-        borderRadius: 12,
-        border: `1px solid ${gradeColor}`,
-        background: `linear-gradient(180deg, ${gradeColor}14, rgba(0,0,0,0))`
+        display: "flex",
+        alignItems: "center",
+        gap: 14
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        fontFamily: mono,
-        fontSize: 9,
-        letterSpacing: 4,
-        color: C.amber,
-        textTransform: "uppercase"
-      }
-    }, "CapSchool · Capacitor Certification"), /*#__PURE__*/React.createElement("div", {
-      style: {
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 12,
-        margin: "14px 0 4px"
+        alignItems: "baseline",
+        gap: 6
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
-        fontSize: 56,
+        fontSize: 46,
         fontWeight: 700,
         color: gradeColor,
         lineHeight: 1
       }
-    }, perfScore), /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: "left"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, perfScore), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
-        fontSize: 12,
-        color: C.dim,
-        lineHeight: 1
+        fontSize: 15,
+        color: C.dim
       }
-    }, "/ 100"), /*#__PURE__*/React.createElement("div", {
+    }, "/ 100")), /*#__PURE__*/React.createElement("div", {
       style: {
+        width: 42,
+        height: 42,
+        borderRadius: 8,
+        background: `${gradeColor}1F`,
+        border: `1px solid ${gradeColor}`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         fontFamily: mono,
-        fontSize: 27,
+        fontSize: 23,
         fontWeight: 700,
-        color: gradeColor,
-        lineHeight: 1.1
+        color: gradeColor
       }
-    }, grade)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: "7px 15px",
-        borderRadius: 20,
-        border: `1.5px solid ${C.green}`,
-        color: C.green,
-        fontFamily: mono,
-        fontSize: 14,
-        fontWeight: 700,
-        letterSpacing: 2,
-        marginLeft: 6
-      }
-    }, "PASSED")), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: mono,
-        fontSize: 17,
-        fontWeight: 700,
-        color: C.text,
-        marginTop: 12
-      }
-    }, eveAuth && eveAuth.name ? eveAuth.name : "Pilot"), eveAuth && eveAuth.verified && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: mono,
-        fontSize: 11,
-        color: C.green,
-        marginTop: 2
-      }
-    }, "✓ ", eveAuth.corpName), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: mono,
-        fontSize: 12,
-        color: C.amber,
-        marginTop: 8
-      }
-    }, fit.name), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: mono,
-        fontSize: 10,
-        color: C.dim,
-        marginTop: 4
-      }
-    }, "Endurance drill · full siege cycle held · survived ", secs.toFixed(0), "s"), /*#__PURE__*/React.createElement("div", {
+    }, grade), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 9,
-        color: "#5A6472",
-        marginTop: 6
+        color: C.dim,
+        letterSpacing: 2
       }
-    }, new Date().toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
-    }))), /*#__PURE__*/React.createElement("div", {
+    }, "PERFORMANCE SCORE"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 10,
+        color: C.green,
+        marginTop: 3
+      }
+    }, "Survived ", secs.toFixed(1), "s · full siege cycle held"))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 13,
         display: "grid",
