@@ -10887,6 +10887,7 @@ function initSim(fit, scenario, pingMs) {
     fleet: fit.fleetCharges ?? 100,
     running: true,
     speed: 1,
+    tickAccum: 0,
     mods,
     neutNext: scenario.neuts.map(n => n.startS),
     siegeStartT: fit.modules.some(m => m.kind === "siege") ? null : 0,
@@ -11740,6 +11741,7 @@ function CapacitorTrainer() {
   const [eveBusy, setEveBusy] = useState(false);
   const [eveError, setEveError] = useState("");
   const [pingMs, setPingMs] = useState(0);
+  const [tickMode, setTickMode] = useState(true); // true = 1 Hz server tick (TQ), false = smooth
   useEffect(() => {
     fetch("https://capschool-eve.liberalrhino.workers.dev/ping-estimate").then(r => r.json()).then(d => {
       if (d && typeof d.ping === "number") setPingMs(Math.round(d.ping));
@@ -11919,11 +11921,20 @@ function CapacitorTrainer() {
         Object.keys(s.mods).forEach(k => s.mods[k] = {
           ...s.mods[k]
         });
+        if (tickMode) {
+          // 1 Hz server tick: accumulate real time, resolve sim logic in whole-second steps like Tranquility
+          s.tickAccum = (s.tickAccum || 0) + 0.1 * s.speed;
+          if (s.tickAccum >= 1) {
+            s.tickAccum -= 1;
+            return step(s, fitRef.current, scnRef.current, 1, (m, ty) => pushLog(s, m, ty));
+          }
+          return s;
+        }
         return step(s, fitRef.current, scnRef.current, 0.1 * s.speed, (m, ty) => pushLog(s, m, ty));
       });
     }, 100);
     return () => clearInterval(iv);
-  }, [screen, sim !== null, pushLog]);
+  }, [screen, sim !== null, pushLog, tickMode]);
   const toggleAutoRepeat = useCallback(id => {
     setFit(f => ({
       ...f,
@@ -12944,6 +12955,49 @@ function CapacitorTrainer() {
       }, locked ? "🔒 " : on ? "✓ " : "", L.label);
     }))), /*#__PURE__*/React.createElement("div", {
       style: {
+        fontFamily: mono,
+        fontSize: 10,
+        letterSpacing: 2.5,
+        color: C.dim,
+        textTransform: "uppercase",
+        margin: "28px 0 12px"
+      }
+    }, "Server Tick"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: C.panel,
+        border: `1px solid ${C.line}`,
+        borderRadius: 12,
+        padding: 16,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        flexWrap: "wrap"
+      }
+    }, [["1 Hz · Tranquility", true], ["Smooth", false]].map(([label, v]) => /*#__PURE__*/React.createElement("button", {
+      key: label,
+      onClick: () => setTickMode(v),
+      style: {
+        background: tickMode === v ? C.amber : "transparent",
+        color: tickMode === v ? "#14100A" : C.dim,
+        fontWeight: tickMode === v ? 700 : 400,
+        border: `1px solid ${tickMode === v ? C.amber : C.line}`,
+        borderRadius: 7,
+        padding: "7px 14px",
+        fontFamily: mono,
+        fontSize: 11,
+        cursor: "pointer",
+        whiteSpace: "nowrap"
+      }
+    }, label)), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 10,
+        color: C.dim,
+        flex: 1,
+        minWidth: 200
+      }
+    }, tickMode ? "Modules resolve once per second, like the server — time injects to land on a tick." : "Continuous sim — smoother, but not TQ-accurate.")), /*#__PURE__*/React.createElement("div", {
+      style: {
         marginTop: 24
       }
     }, /*#__PURE__*/React.createElement("button", {
@@ -13674,7 +13728,7 @@ function CapacitorTrainer() {
         color: C.dim,
         letterSpacing: 2
       }
-    }, "CAPACITOR TELEMETRY"), /*#__PURE__*/React.createElement("div", {
+    }, "CAPACITOR TELEMETRY", tickMode ? " · 1 Hz TICK" : ""), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 22
@@ -13976,7 +14030,7 @@ function CapacitorTrainer() {
         color: C.dim,
         marginTop: 4
       }
-    }, "Endurance drill · full siege cycle held · survived ", secs.toFixed(0), "s", sim.pingMs ? ` · at ${sim.pingMs}ms ping` : ""), /*#__PURE__*/React.createElement("div", {
+    }, "Endurance drill · full siege cycle held · survived ", secs.toFixed(0), "s", sim.pingMs ? ` · at ${sim.pingMs}ms ping` : "", tickMode ? " · 1 Hz tick" : ""), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 9,
