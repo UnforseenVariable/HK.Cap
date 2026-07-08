@@ -13466,6 +13466,23 @@ function CapacitorTrainer() {
     const sweetPct = Math.round(100 * sim.stats.sweet / Math.max(1, secs));
     const gunSlots = Math.max(1, fit.modules.filter(m => m.kind === "gun" || m.kind === "remoteRep").length);
     const objUptime = Math.round(100 * sim.stats.gunUp / Math.max(1, secs * gunSlots));
+    const clamp01 = x => Math.max(0, Math.min(1, x));
+    const _s = sim.stats;
+    const _maxHP = effHpMax(fit, "shield") + effHpMax(fit, "armor") + effHpMax(fit, "hull");
+    const _endHP = sim.shield + sim.armor + sim.hull;
+    const scoreParts = [["Reps sustained", 1 - clamp01(_s.capOuts / 5), 30],
+    // well-timed injects kept every module cycling
+    ["Inject efficiency", _s.charges > 0 ? clamp01((_s.charges - _s.wastedInj) / _s.charges) : 1, 26],
+    // didn't inject too early
+    ["No over-repping", 1 - clamp01(_s.overRep / Math.max(1, _s.repDone + _s.overRep)), 22],
+    // reps applied to real damage
+    ["Objective uptime", clamp01(objUptime / 100), 12],
+    // guns / reps stayed online
+    ["Finished healthy", clamp01(_endHP / Math.max(1, _maxHP)), 10] // buffer held to the end
+    ];
+    const perfScore = Math.round(scoreParts.reduce((a, p) => a + p[1] * p[2], 0));
+    const grade = perfScore >= 95 ? "S" : perfScore >= 88 ? "A" : perfScore >= 78 ? "B" : perfScore >= 65 ? "C" : perfScore >= 50 ? "D" : "E";
+    const gradeColor = perfScore >= 88 ? C.green : perfScore >= 65 ? C.amber : C.red;
     const capEnd = sim.deathCapPct != null ? sim.deathCapPct : sim.cap / fit.capMax;
     // cause of death
     let cause = null;
@@ -13476,7 +13493,7 @@ function CapacitorTrainer() {
     const issues = [];
     if (sim.stats.capOuts > 1) issues.push([sim.stats.capOuts + 50, `${sim.stats.capOuts} modules cap-starved — stagger cycles`]);
     if (sim.stats.wastedInj > 0) issues.push([sim.stats.wastedInj + 30, `${sim.stats.wastedInj} injects wasted >85% — inject under 50%`]);
-    if (sweetPct < 15 && sim.stats.dry < 2) issues.push([10, `Only ${sweetPct}% in peak-regen band — ride cap lower`]);
+    if (sim.stats.overRep > sim.stats.repDone * 0.15) issues.push([26, `${fmt(sim.stats.overRep)} HP over-repped — pulse reps, don't run them on a full tank`]);
     if (sim.cargo === 0 && sim.fleet === 0 && sim.result !== "survived") issues.push([40, "Out of boosters — ration injections"]);
     issues.sort((a, b) => b[0] - a[0]);
     const Metric = ({
@@ -13534,7 +13551,117 @@ function CapacitorTrainer() {
       border: `1px solid ${C.line}`,
       borderRadius: 6
     };
-    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, sim.result === "survived" && scenario.locked ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 10,
+        paddingBottom: 13,
+        borderBottom: `1px solid ${C.line}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "baseline",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 46,
+        fontWeight: 700,
+        color: gradeColor,
+        lineHeight: 1
+      }
+    }, perfScore), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 15,
+        color: C.dim
+      }
+    }, "/ 100")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 42,
+        height: 42,
+        borderRadius: 8,
+        background: `${gradeColor}1F`,
+        border: `1px solid ${gradeColor}`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: mono,
+        fontSize: 23,
+        fontWeight: 700,
+        color: gradeColor
+      }
+    }, grade), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: C.dim,
+        letterSpacing: 2
+      }
+    }, "PERFORMANCE SCORE"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 10,
+        color: C.green,
+        marginTop: 3
+      }
+    }, "Survived ", secs.toFixed(1), "s · full siege cycle held"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 13,
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "5px 20px"
+      }
+    }, scoreParts.map(([label, v, w]) => {
+      const bc = v >= 0.85 ? C.green : v >= 0.5 ? C.amber : C.red;
+      return /*#__PURE__*/React.createElement("div", {
+        key: label,
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 7
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontFamily: mono,
+          fontSize: 8.5,
+          color: C.dim,
+          width: 98,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis"
+        }
+      }, label), /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          height: 4,
+          background: "#0E1622",
+          borderRadius: 2
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: `${Math.round(v * 100)}%`,
+          height: "100%",
+          background: bc,
+          borderRadius: 2
+        }
+      })), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontFamily: mono,
+          fontSize: 8.5,
+          color: bc,
+          width: 30,
+          textAlign: "right"
+        }
+      }, Math.round(v * w), "/", w));
+    }))) : /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "baseline",
@@ -13572,7 +13699,7 @@ function CapacitorTrainer() {
         fontSize: 10,
         color: C.green
       }
-    }, "· ", scenario.locked ? "survived the full siege cycle" : "outlasted the scenario")), cause && /*#__PURE__*/React.createElement("div", {
+    }, "· outlasted the scenario")), cause && /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 10,
         display: "flex",
@@ -13601,20 +13728,20 @@ function CapacitorTrainer() {
         flexWrap: "wrap"
       }
     }, /*#__PURE__*/React.createElement(Metric, {
-      label: "CAP UPTIME",
-      val: `${capUptime}%`,
-      sub: `min ${Math.round(sim.stats.minCap * 100)}%`,
-      tone: capUptime > 90 ? C.green : capUptime > 70 ? C.amber : C.red
+      label: "CAP-OUTS",
+      val: `${sim.stats.capOuts}`,
+      sub: "rep interruptions",
+      tone: sim.stats.capOuts === 0 ? C.green : sim.stats.capOuts <= 2 ? C.amber : C.red
     }), /*#__PURE__*/React.createElement(Metric, {
       label: "INJECT EFFICIENCY",
       val: injEff == null ? "—" : `${injEff}%`,
       sub: `${sim.stats.charges} charges used`,
       tone: injEff == null ? C.dim : injEff > 85 ? C.green : injEff > 60 ? C.amber : C.red
     }), /*#__PURE__*/React.createElement(Metric, {
-      label: "PEAK-REGEN ZONE",
-      val: `${sweetPct}%`,
-      sub: "20–40% band",
-      tone: sweetPct > 30 ? C.green : sweetPct > 12 ? C.amber : C.red
+      label: "OVER-REP",
+      val: `${Math.round(100 * sim.stats.overRep / Math.max(1, sim.stats.repDone + sim.stats.overRep))}%`,
+      sub: "reps wasted",
+      tone: sim.stats.overRep < sim.stats.repDone * 0.08 ? C.green : sim.stats.overRep < sim.stats.repDone * 0.2 ? C.amber : C.red
     }), /*#__PURE__*/React.createElement(Metric, {
       label: "OBJECTIVE UPTIME",
       val: `${objUptime}%`,
