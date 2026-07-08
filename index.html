@@ -10902,6 +10902,8 @@ function initSim(fit, scenario) {
       neuted: 0,
       volleys: 0,
       repDone: 0,
+      ehpTanked: 0,
+      overRep: 0,
       gunUp: 0,
       sweet: 0,
       dry: 0,
@@ -10963,8 +10965,12 @@ function startCycle(sim, fit, m, log) {
   sim.cap -= cost;
   if (m.kind === "shieldBooster") {
     const before = sim.shield;
-    sim.shield = Math.min(effHpMax(fit, "shield"), sim.shield + (m.rep || 0) * siegeMults(sim, fit).rp * linkRepMult(fit, m.kind));
-    sim.stats.repDone += sim.shield - before;
+    const rawRep = (m.rep || 0) * siegeMults(sim, fit).rp * linkRepMult(fit, m.kind);
+    sim.shield = Math.min(effHpMax(fit, "shield"), sim.shield + rawRep);
+    const gained = sim.shield - before;
+    sim.stats.repDone += gained;
+    sim.stats.ehpTanked += gained / (1 - Math.min(0.99, effResist(sim, fit, "shield")));
+    sim.stats.overRep += Math.max(0, rawRep - gained);
   }
   const dur = effCycle(sim, fit, m);
   r.cycleEndT = sim.t + dur;
@@ -11086,8 +11092,12 @@ function step(sim, fit, scenario, dt, log) {
       if (m.kind === "armorRep" || m.kind === "remoteRep") {
         if (m.kind === "armorRep") {
           const before = sim.armor;
-          sim.armor = Math.min(effHpMax(fit, "armor"), sim.armor + (m.rep || 0) * sm.rp * linkRepMult(fit, m.kind));
-          sim.stats.repDone += sim.armor - before;
+          const rawRep = (m.rep || 0) * sm.rp * linkRepMult(fit, m.kind);
+          sim.armor = Math.min(effHpMax(fit, "armor"), sim.armor + rawRep);
+          const gained = sim.armor - before;
+          sim.stats.repDone += gained;
+          sim.stats.ehpTanked += gained / (1 - Math.min(0.99, effResist(sim, fit, "armor")));
+          sim.stats.overRep += Math.max(0, rawRep - gained);
         } else sim.stats.repDone += (m.rep || 0) * sm.rp * linkRepMult(fit, m.kind);
       }
       if (m.kind === "gun") {
@@ -13386,6 +13396,11 @@ function CapacitorTrainer() {
       val: `${objUptime}%`,
       sub: "guns / reps on",
       tone: objUptime > 80 ? C.green : objUptime > 50 ? C.amber : C.dim
+    }), /*#__PURE__*/React.createElement(Metric, {
+      label: "HP TANKED",
+      val: `${(sim.stats.ehpTanked / 1e6).toFixed(2)}M`,
+      sub: "effective HP repaired",
+      tone: C.cyan
     })), H.length > 1 && /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 14
@@ -13566,6 +13581,10 @@ function CapacitorTrainer() {
     }), /*#__PURE__*/React.createElement(Stat, {
       k: "Reps delivered",
       v: `${fmt(sim.stats.repDone)} HP`
+    }), /*#__PURE__*/React.createElement(Stat, {
+      k: "Over-repped (wasted)",
+      v: `${fmt(sim.stats.overRep)} HP`,
+      bad: sim.stats.overRep > sim.stats.repDone * 0.15
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         borderTop: `1px solid ${C.line}`,
