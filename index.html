@@ -10921,6 +10921,7 @@ function initSim(fit, scenario) {
     hist: [],
     injMarks: [],
     neutMarks: [],
+    pendingInj: [],
     _lastBkt: -1
   };
 }
@@ -10954,10 +10955,9 @@ function startCycle(sim, fit, m, log) {
     if (sim.injMarks) sim.injMarks.push(sim.t);
     const repRunning = fit.modules.some(mm => (mm.kind === "shieldBooster" || mm.kind === "armorRep") && sim.mods[mm.id] && sim.mods[mm.id].active);
     if (before / fit.capMax > 0.85) sim.stats.wastedInj += 1;
-    // a cap booster only counts if the shield booster is running to spend it — otherwise the charge is wasted
+    // a cap booster is wasted only if the shield booster isn't running — allow a 1s grace window for it to come on
     if (!repRunning) {
-      sim.stats.injNoRep += 1;
-      sim.stats.injWasted += 1;
+      (sim.pendingInj || (sim.pendingInj = [])).push(sim.t);
     }
     r.cycleEndT = sim.t + m.cycleS;
     r.cycleLen = m.cycleS;
@@ -11149,6 +11149,20 @@ function step(sim, fit, scenario, dt, log) {
     }
   }
 
+  // resolve deferred injections: wasted only if the shield booster hasn't come on within a 1s grace window
+  if (sim.pendingInj && sim.pendingInj.length) {
+    const repNow = fit.modules.some(mm => (mm.kind === "shieldBooster" || mm.kind === "armorRep") && sim.mods[mm.id] && sim.mods[mm.id].active);
+    sim.pendingInj = sim.pendingInj.filter(pt => {
+      if (repNow) return false; // booster came on within the window — good injection
+      if (sim.t - pt >= 1) {
+        sim.stats.injNoRep += 1;
+        sim.stats.injWasted += 1;
+        return false;
+      } // window expired — wasted
+      return true; // still within window
+    });
+  }
+
   // End conditions
   if (sim.hull <= 0) {
     sim.ended = true;
@@ -11162,6 +11176,11 @@ function step(sim, fit, scenario, dt, log) {
     sim.result = "survived";
     sim.running = false;
     log("✅ Siege cycle complete — you survived.", "good");
+  }
+  if (sim.ended && sim.pendingInj && sim.pendingInj.length) {
+    sim.stats.injNoRep += sim.pendingInj.length;
+    sim.stats.injWasted += sim.pendingInj.length;
+    sim.pendingInj = [];
   }
   return sim;
 }
