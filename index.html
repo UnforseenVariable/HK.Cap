@@ -12235,6 +12235,9 @@ function CapacitorTrainer() {
       modules: fit.modules.map(m => m.id === id ? {
         ...m,
         [k]: v
+      } : k === "hotkey" && v && m.hotkey === v ? {
+        ...m,
+        hotkey: ""
       } : m)
     });
     const rmMod = id => setFit({
