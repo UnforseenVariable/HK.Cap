@@ -12119,7 +12119,7 @@ function CapacitorTrainer() {
         lineHeight: 1.6,
         margin: "0 0 18px"
       }
-    }, "A live capacitor & tank drill for sieged capitals. You know the mechanics — here’s just the tool."), [["1", "Set up", "Pick a ship and a threat scenario. Open Customize loadout to rebind hotkeys or edit the rack."], ["2", "Undock & siege", "Nothing lands until you activate Siege — that starts the challenge clock and the neut + DPS pressure."], ["3", "Hold the line", "Fire modules on F1–F8, inject cap boosters, and keep your capacitor off the floor. Survive for a full after-action report."]].map(([n, t, d]) => /*#__PURE__*/React.createElement("div", {
+    }, "A live capacitor & tank drill for sieged capitals. You know the mechanics — here’s just the tool."), [["1", "Set up", "Pick a ship and a threat scenario. Open Customize loadout to rebind hotkeys or edit the rack."], ["2", "Undock & siege", "Nothing lands until you activate Siege — that starts the challenge clock and the neut + DPS pressure."], ["3", "Hold the line", "Fire each module with its hotkey, inject cap boosters, and keep your capacitor off the floor. Survive for a full after-action report."]].map(([n, t, d]) => /*#__PURE__*/React.createElement("div", {
       key: n,
       style: {
         display: "flex",
@@ -13302,37 +13302,135 @@ function CapacitorTrainer() {
       maxWidth: 356,
       lineHeight: 1.6
     }
-  }, "Right-click a module = toggle auto-repeat (red ✕ = off) · Drag to rearrange · R = reload · Space = pause · −/+ on gauge = sim speed"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      maxWidth: 720,
-      margin: "16px auto 0",
-      background: C.panel,
-      border: `1px solid ${C.line}`,
-      borderRadius: 8,
-      padding: "8px 12px",
-      maxHeight: 100,
-      overflowY: "auto"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: mono,
-      fontSize: 9,
-      color: C.dim,
-      letterSpacing: 2
-    }
-  }, "COMBAT LOG"), sim.log.slice(0, 5).map((l, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      fontFamily: mono,
-      fontSize: 10,
-      lineHeight: 1.5,
-      color: l.type === "neut" ? C.red : l.type === "bad" ? C.red : l.type === "warn" ? C.amber : l.type === "good" ? C.green : C.dim
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#3A4A64"
-    }
-  }, "[", l.t.toFixed(1), "s]"), " ", l.msg))), sim.ended && /*#__PURE__*/React.createElement("div", {
+  }, "Right-click a module = toggle auto-repeat (red ✕ = off) · Drag to rearrange · R = reload · Space = pause · −/+ on gauge = sim speed"))), (() => {
+    const H = sim.hist || [];
+    const maxT = Math.max(30, ct);
+    const W = 696,
+      HH = 54,
+      pad = 3;
+    const cx = t => pad + t / Math.max(1, maxT) * (W - pad * 2);
+    const cy = v => pad + (1 - Math.max(0, Math.min(1, v))) * (HH - pad * 2);
+    const line = H.length ? H.map((p, i) => `${i ? "L" : "M"}${cx(p.t).toFixed(1)},${cy(p.c).toFixed(1)}`).join(" ") : "";
+    const area = H.length ? `M${cx(H[0].t).toFixed(1)},${cy(0).toFixed(1)} ${H.map(p => `L${cx(p.t).toFixed(1)},${cy(p.c).toFixed(1)}`).join(" ")} L${cx(H[H.length - 1].t).toFixed(1)},${cy(0).toFixed(1)} Z` : "";
+    const last = H.length ? H[H.length - 1] : null;
+    const capPct = Math.round(sim.cap / fit.capMax * 100);
+    const sm2 = siegeMults(sim, fit);
+    let tankEhps = 0;
+    fit.modules.forEach(m => {
+      if ((m.kind === "shieldBooster" || m.kind === "armorRep") && sim.mods[m.id] && sim.mods[m.id].active) {
+        const res = effResist(sim, fit, m.kind === "shieldBooster" ? "shield" : "armor");
+        tankEhps += (m.rep || 0) * sm2.rp * linkRepMult(fit, m.kind) / effCycle(sim, fit, m) / (1 - Math.min(0.99, res));
+      }
+    });
+    const neutGJs = (scenario.neuts || []).reduce((a, n) => a + n.amount * n.count / (n.cycleS || 1), 0);
+    const inDps = combatOn && ct >= (scenario.dpsStartS || 0) ? scenario.incomingDps : 0;
+    const capColor = capPct < 15 ? C.red : capPct < 30 ? C.amber : C.cyan;
+    const reads = [["CAP", `${capPct}%`, capColor], ["LOCAL TANK", `${fmt(tankEhps)}`, tankEhps ? C.green : C.dim], ["INCOMING DPS", `${fmt(inDps)}`, inDps ? C.red : C.dim], ["NEUT GJ/S", `${fmt(neutGJs)}`, neutGJs && combatOn ? C.red : C.dim]];
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        maxWidth: 720,
+        margin: "16px auto 0",
+        background: C.panel,
+        border: `1px solid ${C.line}`,
+        borderRadius: 8,
+        padding: "10px 14px 11px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-end",
+        marginBottom: 9
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: C.dim,
+        letterSpacing: 2
+      }
+    }, "CAPACITOR TELEMETRY"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 22
+      }
+    }, reads.map(([label, val, color]) => /*#__PURE__*/React.createElement("div", {
+      key: label,
+      style: {
+        textAlign: "right"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 15,
+        fontWeight: 700,
+        color,
+        lineHeight: 1
+      }
+    }, val), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 8,
+        color: "#5A6472",
+        letterSpacing: 1,
+        marginTop: 3
+      }
+    }, label))))), /*#__PURE__*/React.createElement("svg", {
+      viewBox: `0 0 ${W} ${HH}`,
+      width: "100%",
+      height: "54",
+      preserveAspectRatio: "none",
+      style: {
+        display: "block"
+      }
+    }, /*#__PURE__*/React.createElement("rect", {
+      x: "0",
+      y: cy(0.4),
+      width: W,
+      height: cy(0.2) - cy(0.4),
+      fill: "rgba(127,219,122,.10)"
+    }), /*#__PURE__*/React.createElement("rect", {
+      x: "0",
+      y: cy(0.15),
+      width: W,
+      height: cy(0) - cy(0.15),
+      fill: "rgba(232,90,79,.10)"
+    }), /*#__PURE__*/React.createElement("line", {
+      x1: "0",
+      y1: cy(0.25),
+      x2: W,
+      y2: cy(0.25),
+      stroke: "#1D2530",
+      strokeWidth: "0.5",
+      strokeDasharray: "3 3"
+    }), area && /*#__PURE__*/React.createElement("path", {
+      d: area,
+      fill: "rgba(240,178,62,.13)"
+    }), line && /*#__PURE__*/React.createElement("path", {
+      d: line,
+      fill: "none",
+      stroke: C.amber,
+      strokeWidth: "1.6"
+    }), last && /*#__PURE__*/React.createElement("circle", {
+      cx: cx(last.t),
+      cy: cy(last.c),
+      r: "2.6",
+      fill: capColor
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        marginTop: 4,
+        fontFamily: mono,
+        fontSize: 8,
+        color: "#4A5666"
+      }
+    }, /*#__PURE__*/React.createElement("span", null, "peak-regen band 20–40%"), sim.log && sim.log.length > 0 ? /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: sim.log[0].type === "neut" || sim.log[0].type === "bad" ? C.red : sim.log[0].type === "warn" ? C.amber : sim.log[0].type === "good" ? C.green : "#5A6472"
+      }
+    }, "[", sim.log[0].t.toFixed(1), "s] ", sim.log[0].msg) : /*#__PURE__*/React.createElement("span", null, "awaiting siege")));
+  })(), sim.ended && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
       inset: 0,
