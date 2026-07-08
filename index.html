@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EVE Capital Capacitor Trainer</title>
-<meta name="description" content="Interactive EVE Online capital-ship capacitor and cap-management flight trainer.">
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
   #root { min-height: 100vh; }
@@ -1342,6 +1341,24 @@ const PRESETS = [{
     cycleS: 20
   }]
 }];
+function makeStaggeredNeuts(gjs, n = 6, cycleS = 12, startS = 6) {
+  gjs = Math.max(0, gjs || 0);
+  const perCycle = Math.round(gjs / n * cycleS);
+  const step = cycleS / n;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    let s = startS + i * step;
+    s = Number.isInteger(s) ? s : +s.toFixed(2);
+    out.push({
+      label: `Neut ${i + 1}`,
+      amount: perCycle,
+      cycleS,
+      startS: s,
+      count: 1
+    });
+  }
+  return out;
+}
 const SCENARIOS = [{
   name: "Endurance — how long can you last?",
   blurb: "The standard test: 6 staggered Bhaalgorns hitting ~300 GJ/s each (~1,800 GJ/s total neut pressure) plus 60,000 raw DPS. Manage cap and reps to survive as long as possible. Your score is your survival time. (Fixed parameters — not editable.)",
@@ -1387,17 +1404,56 @@ const SCENARIOS = [{
     count: 1
   }]
 }, {
+  name: "Custom — set GJ/s + DPS",
+  blurb: "Dial in a flat neut pressure and incoming DPS. The neut load is spread across 6 auto-staggered sources, so cap drain is smooth and continuous rather than spiky.",
+  simple: true,
+  neutGJs: 500,
+  durationS: 900,
+  incomingDps: 15000,
+  dpsStartS: 5,
+  neuts: makeStaggeredNeuts(500)
+}, {
   name: "Bhaalgorn wing (heavy neut)",
   blurb: "Three Bhaalgorns anchor on you with bonused heavy neutralizers — roughly 450 GJ/s of pure cap warfare and only light damage. A cap-attrition fight: outlast their neuts.",
   durationS: 300,
   incomingDps: 2500,
   dpsStartS: 12,
   neuts: [{
-    label: "Bhaalgorn heavy neuts",
+    label: "Bhaalgorn 1",
     amount: 1800,
     cycleS: 24,
     startS: 12,
-    count: 6
+    count: 1
+  }, {
+    label: "Bhaalgorn 2",
+    amount: 1800,
+    cycleS: 24,
+    startS: 16,
+    count: 1
+  }, {
+    label: "Bhaalgorn 3",
+    amount: 1800,
+    cycleS: 24,
+    startS: 20,
+    count: 1
+  }, {
+    label: "Bhaalgorn 4",
+    amount: 1800,
+    cycleS: 24,
+    startS: 24,
+    count: 1
+  }, {
+    label: "Bhaalgorn 5",
+    amount: 1800,
+    cycleS: 24,
+    startS: 28,
+    count: 1
+  }, {
+    label: "Bhaalgorn 6",
+    amount: 1800,
+    cycleS: 24,
+    startS: 32,
+    count: 1
   }]
 }, {
   name: "Heavy Armor fleet",
@@ -1406,36 +1462,132 @@ const SCENARIOS = [{
   incomingDps: 25000,
   dpsStartS: 8,
   neuts: [{
-    label: "Bhaalgorn neut line",
+    label: "Bhaalgorn neut 1",
     amount: 1800,
     cycleS: 24,
     startS: 10,
-    count: 8
+    count: 1
   }, {
-    label: "Support medium neuts",
+    label: "Bhaalgorn neut 2",
+    amount: 1800,
+    cycleS: 24,
+    startS: 13,
+    count: 1
+  }, {
+    label: "Bhaalgorn neut 3",
+    amount: 1800,
+    cycleS: 24,
+    startS: 16,
+    count: 1
+  }, {
+    label: "Bhaalgorn neut 4",
+    amount: 1800,
+    cycleS: 24,
+    startS: 19,
+    count: 1
+  }, {
+    label: "Bhaalgorn neut 5",
+    amount: 1800,
+    cycleS: 24,
+    startS: 22,
+    count: 1
+  }, {
+    label: "Bhaalgorn neut 6",
+    amount: 1800,
+    cycleS: 24,
+    startS: 25,
+    count: 1
+  }, {
+    label: "Bhaalgorn neut 7",
+    amount: 1800,
+    cycleS: 24,
+    startS: 28,
+    count: 1
+  }, {
+    label: "Bhaalgorn neut 8",
+    amount: 1800,
+    cycleS: 24,
+    startS: 31,
+    count: 1
+  }, {
+    label: "Medium neut 1",
     amount: 480,
     cycleS: 12,
     startS: 15,
-    count: 6
+    count: 1
+  }, {
+    label: "Medium neut 2",
+    amount: 480,
+    cycleS: 12,
+    startS: 17,
+    count: 1
+  }, {
+    label: "Medium neut 3",
+    amount: 480,
+    cycleS: 12,
+    startS: 19,
+    count: 1
+  }, {
+    label: "Medium neut 4",
+    amount: 480,
+    cycleS: 12,
+    startS: 21,
+    count: 1
+  }, {
+    label: "Medium neut 5",
+    amount: 480,
+    cycleS: 12,
+    startS: 23,
+    count: 1
+  }, {
+    label: "Medium neut 6",
+    amount: 480,
+    cycleS: 12,
+    startS: 25,
+    count: 1
   }]
 }, {
   name: "Dreadbomb (capital neuts)",
-  blurb: "You got dropped. A wing of dreads lands with capital neutralizers and enormous alpha — huge 4,400 GJ capital-neut spikes plus ~55k DPS. Survive the opening; burn injectors hard.",
+  blurb: "You got dropped. A wing of dreads lands with capital neutralizers — staggered 4,400 GJ capital-neut spikes every 8s plus ~55k DPS. Survive the opening; burn injectors hard.",
   durationS: 180,
   incomingDps: 55000,
   dpsStartS: 6,
   neuts: [{
-    label: "Capital neuts (first volley)",
+    label: "Capital neut 1",
     amount: 4400,
     cycleS: 48,
     startS: 12,
-    count: 3
+    count: 1
   }, {
-    label: "Capital neuts (second volley)",
+    label: "Capital neut 2",
+    amount: 4400,
+    cycleS: 48,
+    startS: 20,
+    count: 1
+  }, {
+    label: "Capital neut 3",
+    amount: 4400,
+    cycleS: 48,
+    startS: 28,
+    count: 1
+  }, {
+    label: "Capital neut 4",
     amount: 4400,
     cycleS: 48,
     startS: 36,
-    count: 3
+    count: 1
+  }, {
+    label: "Capital neut 5",
+    amount: 4400,
+    cycleS: 48,
+    startS: 44,
+    count: 1
+  }, {
+    label: "Capital neut 6",
+    amount: 4400,
+    cycleS: 48,
+    startS: 52,
+    count: 1
   }]
 }, {
   name: "Capital neut duel (1v1)",
@@ -2900,7 +3052,45 @@ function CapacitorTrainer() {
         fontWeight: 700,
         letterSpacing: 1
       }
-    }, "LOCKED"), " — fixed test parameters:", /*#__PURE__*/React.createElement("br", null), "Incoming ", scenario.incomingDps.toLocaleString(), " DPS · ", scenario.neuts.length, " staggered neut sources · ", scenario.neuts.reduce((a, n) => a + n.amount * n.count, 0).toLocaleString(), " GJ per volley", /*#__PURE__*/React.createElement("br", null), "Select another scenario to edit DPS and neuts.") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    }, "LOCKED"), " — fixed test parameters:", /*#__PURE__*/React.createElement("br", null), "Incoming ", scenario.incomingDps.toLocaleString(), " DPS · ", scenario.neuts.length, " staggered neut sources · ", scenario.neuts.reduce((a, n) => a + n.amount * n.count, 0).toLocaleString(), " GJ per volley", /*#__PURE__*/React.createElement("br", null), "Select another scenario to edit DPS and neuts.") : scenario.simple ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10,
+        flexWrap: "wrap",
+        alignItems: "flex-end"
+      }
+    }, /*#__PURE__*/React.createElement(NumField, {
+      label: "Neut pressure (GJ/s)",
+      value: scenario.neutGJs,
+      onChange: v => setScenario({
+        ...scenario,
+        neutGJs: v,
+        neuts: makeStaggeredNeuts(v)
+      }),
+      w: 110
+    }), /*#__PURE__*/React.createElement(NumField, {
+      label: "Incoming DPS",
+      value: scenario.incomingDps,
+      onChange: v => setScenario({
+        ...scenario,
+        incomingDps: v
+      })
+    }), /*#__PURE__*/React.createElement(NumField, {
+      label: "Duration (s)",
+      value: scenario.durationS,
+      onChange: v => setScenario({
+        ...scenario,
+        durationS: v
+      })
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 10,
+        color: C.dim,
+        marginTop: 8,
+        lineHeight: 1.7
+      }
+    }, Math.round(scenario.neutGJs || 0), " GJ/s spread across 6 auto-staggered sources (", Math.round((scenario.neutGJs || 0) / 6), " GJ/s each) · always evenly staggered.")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 10,
@@ -3333,7 +3523,12 @@ function CapacitorTrainer() {
       padding: 18,
       fontFamily: "system-ui, sans-serif"
     }
-  }, /*#__PURE__*/React.createElement("style", null, `@media (prefers-reduced-motion: no-preference) { @keyframes capReload { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.88); } } }`), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("style", null, `@media (prefers-reduced-motion: no-preference) { @keyframes capReload { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.88); } } }
+        #root { zoom: 1.6; }
+        @media (max-width: 1680px) { #root { zoom: 1.45; } }
+        @media (max-width: 1440px) { #root { zoom: 1.35; } }
+        @media (max-width: 1200px) { #root { zoom: 1.25; } }
+        @media (max-width: 900px) { #root { zoom: 1.1; } }`), /*#__PURE__*/React.createElement("div", {
     style: {
       maxWidth: 1080,
       margin: "0 auto"
