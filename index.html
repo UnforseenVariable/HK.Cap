@@ -10888,6 +10888,7 @@ function initSim(fit, scenario, pingMs) {
     running: true,
     speed: 1,
     tickAccum: 0,
+    displayT: 0,
     mods,
     neutNext: scenario.neuts.map(n => n.startS),
     siegeStartT: fit.modules.some(m => m.kind === "siege") ? null : 0,
@@ -11922,7 +11923,8 @@ function CapacitorTrainer() {
           ...s.mods[k]
         });
         if (tickMode) {
-          // 1 Hz server tick: accumulate real time, resolve sim logic in whole-second steps like Tranquility
+          // 1 Hz server tick: logic resolves in whole seconds, displayT advances smoothly for animation
+          s.displayT = (s.displayT != null ? s.displayT : s.t) + 0.1 * s.speed;
           s.tickAccum = (s.tickAccum || 0) + 0.1 * s.speed;
           if (s.tickAccum >= 1) {
             s.tickAccum -= 1;
@@ -11930,7 +11932,9 @@ function CapacitorTrainer() {
           }
           return s;
         }
-        return step(s, fitRef.current, scnRef.current, 0.1 * s.speed, (m, ty) => pushLog(s, m, ty));
+        const stepped = step(s, fitRef.current, scnRef.current, 0.1 * s.speed, (m, ty) => pushLog(s, m, ty));
+        stepped.displayT = stepped.t;
+        return stepped;
       });
     }, 100);
     return () => clearInterval(iv);
@@ -13647,7 +13651,7 @@ function CapacitorTrainer() {
     }, /*#__PURE__*/React.createElement(ModuleButton, {
       mod: m,
       rt: sim.mods[m.id],
-      t: sim.t,
+      t: sim.displayT != null ? sim.displayT : sim.t,
       onToggle: () => toggleModule(m.id)
     })) : /*#__PURE__*/React.createElement("div", {
       style: {
