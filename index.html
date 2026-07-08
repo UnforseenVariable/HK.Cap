@@ -1257,13 +1257,16 @@ const PRESETS = [{
 }, {
   name: "Revelation — Armor Dread",
   blurb: "Laser dread. Guns eat cap — balance DPS uptime against your tank.",
-  capMax: 60000,
-  capRechargeS: 4400,
-  shieldMax: 78100,
+  capMax: 75000,
+  capRechargeS: 3300,
+  shieldMax: 97625,
   shieldRechargeS: 15000,
-  armorMax: 113000,
-  hullMax: 113000,
+  armorMax: 141250,
+  hullMax: 141250,
   neutResist: 0,
+  resShield: 0.5,
+  resArmor: 0.65,
+  resHull: 0.6,
   modules: [{
     name: "Siege Module II",
     kind: "siege",
@@ -1300,13 +1303,16 @@ const PRESETS = [{
 }, {
   name: "Naglfar — Shield Dread",
   blurb: "Projectile guns cost zero cap — all capacitor feeds the shield booster.",
-  capMax: 50000,
-  capRechargeS: 3660,
-  shieldMax: 95500,
+  capMax: 62500,
+  capRechargeS: 2745,
+  shieldMax: 119375,
   shieldRechargeS: 15000,
-  armorMax: 95500,
-  hullMax: 95500,
+  armorMax: 119375,
+  hullMax: 119375,
   neutResist: 0,
+  resShield: 0.7,
+  resArmor: 0.5,
+  resHull: 0.6,
   modules: [{
     name: "Siege Module II",
     kind: "siege",
@@ -2667,12 +2673,12 @@ function CapacitorTrainer() {
       const overflow = r.rack.length > 10 ? r.rack.slice(10).map(m => m.name + " — rack full (10 max)") : [];
       setFit({
         name: `${r.ship} — ${r.fitName}`,
-        capMax: base.capMax + r.battery.capAdd,
-        capRechargeS: base.capRechargeS,
-        shieldMax: base.shieldMax,
+        capMax: Math.round(base.capMax * 1.25) + r.battery.capAdd,
+        capRechargeS: Math.round(base.capRechargeS * 0.75),
+        shieldMax: Math.round(base.shieldMax * 1.25),
         shieldRechargeS: 9000,
-        armorMax: base.armorMax,
-        hullMax: base.hullMax,
+        armorMax: Math.round(base.armorMax * 1.25),
+        hullMax: Math.round(base.hullMax * 1.25),
         neutResist: r.battery.resist,
         resShield: 0.6,
         resArmor: 0.5,
@@ -2976,11 +2982,21 @@ function CapacitorTrainer() {
         color: C.dim,
         marginTop: 10
       }
-    }, "Peak passive regen ≈ ", (2.5 * fit.capMax / fit.capRechargeS).toFixed(0), " GJ/s at 25% cap"), /*#__PURE__*/React.createElement("button", {
+    }, "Peak passive regen ≈ ", (2.5 * fit.capMax / fit.capRechargeS).toFixed(0), " GJ/s at 25% cap"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 10,
+        color: C.green,
+        marginTop: 6
+      }
+    }, "All-V skills already applied by default (presets + imports)."), /*#__PURE__*/React.createElement("button", {
       onClick: () => setFit({
         ...fit,
         capMax: Math.round(fit.capMax * 1.25),
-        capRechargeS: Math.round(fit.capRechargeS * 0.75)
+        capRechargeS: Math.round(fit.capRechargeS * 0.75),
+        shieldMax: Math.round(fit.shieldMax * 1.25),
+        armorMax: Math.round(fit.armorMax * 1.25),
+        hullMax: Math.round(fit.hullMax * 1.25)
       }),
       style: {
         marginTop: 8,
@@ -2993,8 +3009,8 @@ function CapacitorTrainer() {
         fontSize: 10,
         cursor: "pointer"
       },
-      title: "Cap Management V (+25% capacity) and Cap Systems Operation V (−25% recharge time). Apply once after loading base hull values."
-    }, "+ apply all-V cap skills (×1.25 cap, ×0.75 recharge — apply once)")), /*#__PURE__*/React.createElement("div", {
+      title: "Re-apply all-V skill multipliers (×1.25 cap/HP, ×0.75 recharge). Only needed if you pasted raw, unskilled base values."
+    }, "+ re-apply all-V skills (×1.25 cap & HP, ×0.75 recharge)")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.panel,
         border: `1px solid ${C.line}`,
