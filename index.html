@@ -1780,7 +1780,7 @@ function startCycle(sim, fit, m, log) {
   sim.cap -= cost;
   if (m.kind === "shieldBooster") {
     const before = sim.shield;
-    sim.shield = Math.min(fit.shieldMax, sim.shield + (m.rep || 0) * siegeMults(sim, fit).rp);
+    sim.shield = Math.min(fit.shieldMax, sim.shield + (m.rep || 0) * siegeMults(sim, fit).rp * linkRepMult(fit, m.kind));
     sim.stats.repDone += sim.shield - before;
   }
   const dur = effCycle(sim, fit, m);
@@ -1799,10 +1799,18 @@ function effResist(sim, fit, layer) {
       if (sim.mods[m.id] && sim.mods[m.id].active) actProd *= m.resonance;
     }
   });
-  if (!has || allProd <= 0) return full;
-  const baseResonance = (1 - full) / allProd; // resonance with every hardener OFF
-  const eff = 1 - baseResonance * actProd; // fewer active -> higher resonance -> lower resist
-  return Math.max(0, Math.min(0.99, eff));
+  let resist = full;
+  if (has && allProd > 0) resist = 1 - (1 - full) / allProd * actProd;
+  const L = fit.links || {};
+  if (layer === "shield" && L.shieldRes) resist = 1 - (1 - resist) * 0.72; // Shield Harmonizing burst
+  if (layer === "armor" && L.armorRes) resist = 1 - (1 - resist) * 0.72; // Armor Energizing burst
+  return Math.max(0, Math.min(0.99, resist));
+}
+function linkRepMult(fit, kind) {
+  const L = fit.links || {};
+  if (kind === "shieldBooster" && L.shieldRep) return 1.3; // Active Shielding burst
+  if ((kind === "armorRep" || kind === "remoteRep") && L.armorRep) return 1.3; // Rapid Repair burst
+  return 1;
 }
 function siegeOn(sim, fit) {
   return fit.modules.some(m => m.kind === "siege" && sim.mods[m.id] && sim.mods[m.id].active);
@@ -1866,9 +1874,9 @@ function step(sim, fit, scenario, dt, log) {
       if (m.kind === "armorRep" || m.kind === "remoteRep") {
         if (m.kind === "armorRep") {
           const before = sim.armor;
-          sim.armor = Math.min(fit.armorMax, sim.armor + (m.rep || 0) * sm.rp);
+          sim.armor = Math.min(fit.armorMax, sim.armor + (m.rep || 0) * sm.rp * linkRepMult(fit, m.kind));
           sim.stats.repDone += sim.armor - before;
-        } else sim.stats.repDone += (m.rep || 0) * sm.rp;
+        } else sim.stats.repDone += (m.rep || 0) * sm.rp * linkRepMult(fit, m.kind);
       }
       if (m.kind === "gun") {
         sim.stats.volleys += 1;
@@ -2432,6 +2440,12 @@ function CapacitorTrainer() {
     f.resShield = f.resShield ?? 0.6;
     f.resArmor = f.resArmor ?? 0.5;
     f.resHull = f.resHull ?? 0.33;
+    f.links = f.links || {
+      shieldRes: false,
+      armorRes: false,
+      shieldRep: false,
+      armorRep: false
+    };
     return f;
   }
   const pushLog = useCallback((s, msg, type) => {
@@ -2685,6 +2699,12 @@ function CapacitorTrainer() {
         resHull: 0.33,
         cargoCharges: r.cargoCharges > 0 ? r.cargoCharges : 30,
         fleetCharges: 100,
+        links: {
+          shieldRes: false,
+          armorRes: false,
+          shieldRep: false,
+          armorRep: false
+        },
         modules: r.rack.slice(0, 10).map((m, i) => ({
           ...m,
           id: uid(),
@@ -3206,6 +3226,67 @@ function CapacitorTrainer() {
         fontSize: 11,
         color: C.amber,
         letterSpacing: 2,
+        marginBottom: 4
+      }
+    }, "FLEET LINKS (COMMAND BURSTS)"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 10,
+        color: C.dim,
+        marginBottom: 10
+      }
+    }, "Simulate fleet boosts. Resist links add ~28% to that layer's resist; rep links add ~30% local rep amount. Effects apply live to your EHP and rep tank."), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        flexWrap: "wrap"
+      }
+    }, [{
+      k: "shieldRes",
+      label: "Shield Harmonizing · +resist"
+    }, {
+      k: "shieldRep",
+      label: "Active Shielding · +shield boost"
+    }, {
+      k: "armorRes",
+      label: "Armor Energizing · +resist"
+    }, {
+      k: "armorRep",
+      label: "Rapid Repair · +armor rep"
+    }].map(L => {
+      const on = (fit.links || {})[L.k];
+      return /*#__PURE__*/React.createElement("button", {
+        key: L.k,
+        onClick: () => setF("links", {
+          ...(fit.links || {}),
+          [L.k]: !on
+        }),
+        style: {
+          background: on ? "#14210F" : "transparent",
+          border: `1px solid ${on ? C.green : C.line}`,
+          color: on ? C.green : C.dim,
+          borderRadius: 6,
+          padding: "6px 11px",
+          fontFamily: mono,
+          fontSize: 11,
+          cursor: "pointer",
+          whiteSpace: "nowrap"
+        }
+      }, on ? "\u2713 " : "", L.label);
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: C.panel,
+        border: `1px solid ${C.line}`,
+        borderRadius: 8,
+        padding: 14,
+        marginTop: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 11,
+        color: C.amber,
+        letterSpacing: 2,
         marginBottom: 10
       }
     }, "MODULE RACK — 10 slots · click a key chip to rebind its hotkey"), fit.modules.map((m, i) => /*#__PURE__*/React.createElement("div", {
@@ -3376,8 +3457,8 @@ function CapacitorTrainer() {
   const sgDur = sgOn ? 0.5 : 1;
   const localTank = Math.round(fit.modules.reduce((acc, m) => {
     if (!sim.mods[m.id] || !sim.mods[m.id].active) return acc;
-    if (m.kind === "shieldBooster") return acc + m.rep * sgRp / (m.cycleS * sgDur) / (1 - Math.min(0.99, rS));
-    if (m.kind === "armorRep") return acc + m.rep * sgRp / (m.cycleS * sgDur) / (1 - Math.min(0.99, rA));
+    if (m.kind === "shieldBooster") return acc + m.rep * sgRp * linkRepMult(fit, m.kind) / (m.cycleS * sgDur) / (1 - Math.min(0.99, rS));
+    if (m.kind === "armorRep") return acc + m.rep * sgRp * linkRepMult(fit, m.kind) / (m.cycleS * sgDur) / (1 - Math.min(0.99, rA));
     return acc;
   }, 0));
   const chargePanels = /*#__PURE__*/React.createElement("div", {
