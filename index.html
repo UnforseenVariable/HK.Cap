@@ -11692,6 +11692,24 @@ function CapacitorTrainer() {
       if (mq.removeEventListener) mq.removeEventListener("change", on);else mq.removeListener(on);
     };
   }, []);
+  useEffect(() => {
+    if (!scenario.locked) return;
+    const shield = String(fit.name || "").toLowerCase().includes("phoenix");
+    setFit(f => ({
+      ...f,
+      links: shield ? {
+        shieldRes: true,
+        shieldHp: true,
+        armorRes: false,
+        armorHp: false
+      } : {
+        shieldRes: false,
+        shieldHp: false,
+        armorRes: true,
+        armorHp: true
+      }
+    }));
+  }, [scenario.locked, fit.name]);
 
   // ---- EVE SSO corp verification (soft gate) ----
   const EVE_CLIENT_ID = "088cf54a118d4a8ebba8735453bd4f69";
@@ -12822,7 +12840,7 @@ function CapacitorTrainer() {
         letterSpacing: 0,
         textTransform: "none"
       }
-    }, "· optional")), /*#__PURE__*/React.createElement("div", {
+    }, scenario.locked ? "· online for benchmark" : "· optional")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.panel,
         border: `1px solid ${C.line}`,
@@ -12837,22 +12855,27 @@ function CapacitorTrainer() {
       }
     }, [{
       k: "shieldRes",
-      label: "Shield Harmonizing"
+      label: "Shield Harmonizing",
+      layer: "shield"
     }, {
       k: "shieldHp",
-      label: "Shield Extension"
+      label: "Shield Extension",
+      layer: "shield"
     }, {
       k: "armorRes",
-      label: "Armor Energizing"
+      label: "Armor Energizing",
+      layer: "armor"
     }, {
       k: "armorHp",
-      label: "Armor Reinforcement"
-    }].map(L => {
-      const on = (fit.links || {})[L.k];
+      label: "Armor Reinforcement",
+      layer: "armor"
+    }].filter(L => !scenario.locked || L.layer === (String(fit.name || "").toLowerCase().includes("phoenix") ? "shield" : "armor")).map(L => {
+      const locked = scenario.locked;
+      const on = locked ? true : (fit.links || {})[L.k];
       return /*#__PURE__*/React.createElement("button", {
         key: L.k,
-        className: "chip",
-        onClick: () => setF("links", {
+        className: locked ? "" : "chip",
+        onClick: locked ? undefined : () => setF("links", {
           ...(fit.links || {}),
           [L.k]: !on
         }),
@@ -12864,10 +12887,10 @@ function CapacitorTrainer() {
           padding: "7px 12px",
           fontFamily: mono,
           fontSize: 11,
-          cursor: "pointer",
+          cursor: locked ? "default" : "pointer",
           whiteSpace: "nowrap"
         }
-      }, on ? "✓ " : "", L.label);
+      }, locked ? "🔒 " : on ? "✓ " : "", L.label);
     }))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 24
