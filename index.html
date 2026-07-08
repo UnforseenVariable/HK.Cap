@@ -11928,6 +11928,9 @@ function CapacitorTrainer() {
           s.tickAccum = (s.tickAccum || 0) + 0.1 * s.speed;
           if (s.tickAccum >= 1) {
             s.tickAccum -= 1;
+            s.shieldPrev = s.shield;
+            s.armorPrev = s.armor;
+            s.hullPrev = s.hull;
             return step(s, fitRef.current, scnRef.current, 1, (m, ty) => pushLog(s, m, ty));
           }
           return s;
@@ -13215,6 +13218,11 @@ function CapacitorTrainer() {
   const ct = combatOn ? sim.t - sim.siegeStartT : 0;
   const neutAvg = scenario.neuts.reduce((a, n) => combatOn && ct >= n.startS - 3 ? a + n.amount * n.count * (1 - (fit.neutResist || 0)) / n.cycleS : a, 0);
   const net = regen - modDrain - neutAvg;
+  const _tf = tickMode ? Math.max(0, Math.min(1, sim.tickAccum || 0)) : 1;
+  const _lerp = (a, b) => a == null ? b : a + (b - a) * _tf;
+  const dShield = _lerp(sim.shieldPrev, sim.shield);
+  const dArmor = _lerp(sim.armorPrev, sim.armor);
+  const dHull = _lerp(sim.hullPrev, sim.hull);
   const neutFlash = sim.t - sim.lastNeutHit < 0.7;
   const tRemain = Math.max(0, scenario.durationS - ct);
   const rS = effResist(sim, fit, "shield"),
@@ -13392,17 +13400,17 @@ function CapacitorTrainer() {
     }
   }, /*#__PURE__*/React.createElement(Bar, {
     label: "SHIELD",
-    value: sim.shield,
+    value: dShield,
     max: effHpMax(fit, "shield"),
     color: C.cyan
   }), /*#__PURE__*/React.createElement(Bar, {
     label: "ARMOR",
-    value: sim.armor,
+    value: dArmor,
     max: effHpMax(fit, "armor"),
     color: C.armor
   }), /*#__PURE__*/React.createElement(Bar, {
     label: "HULL",
-    value: sim.hull,
+    value: dHull,
     max: effHpMax(fit, "hull"),
     color: C.hull
   }), /*#__PURE__*/React.createElement("div", {
@@ -13570,11 +13578,11 @@ function CapacitorTrainer() {
     rate: regen,
     netHint: net,
     neutFlash: neutFlash,
-    shield: sim.shield,
+    shield: dShield,
     shieldMax: effHpMax(fit, "shield"),
-    armor: sim.armor,
+    armor: dArmor,
     armorMax: effHpMax(fit, "armor"),
-    hull: sim.hull,
+    hull: dHull,
     hullMax: effHpMax(fit, "hull"),
     speed: sim.speed,
     onSpeed: s => setSim(p => ({
