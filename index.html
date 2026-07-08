@@ -10911,7 +10911,10 @@ function initSim(fit, scenario) {
       minCap: 1,
       charges: 0,
       wastedInj: 0,
-      capOuts: 0
+      injNoRep: 0,
+      injWasted: 0,
+      capOuts: 0,
+      hardOffS: 0
     },
     ended: false,
     result: null,
@@ -10949,7 +10952,13 @@ function startCycle(sim, fit, m, log) {
     sim.stats.injected += sim.cap - before;
     sim.stats.charges += 1;
     if (sim.injMarks) sim.injMarks.push(sim.t);
+    const repRunning = fit.modules.some(mm => (mm.kind === "shieldBooster" || mm.kind === "armorRep") && sim.mods[mm.id] && sim.mods[mm.id].active);
     if (before / fit.capMax > 0.85) sim.stats.wastedInj += 1;
+    // a cap booster only counts if the shield booster is running to spend it — otherwise the charge is wasted
+    if (!repRunning) {
+      sim.stats.injNoRep += 1;
+      sim.stats.injWasted += 1;
+    }
     r.cycleEndT = sim.t + m.cycleS;
     r.cycleLen = m.cycleS;
     return;
@@ -11117,6 +11126,7 @@ function step(sim, fit, scenario, dt, log) {
       } else startCycle(sim, fit, m, log);
     }
     if (combatOn && r.active && (m.kind === "gun" || m.kind === "remoteRep")) sim.stats.gunUp += dt;
+    if (combatOn && m.kind === "hardener" && !r.active) sim.stats.hardOffS += dt;
   });
 
   // Stats
@@ -13430,7 +13440,7 @@ function CapacitorTrainer() {
         color: sim.log[0].type === "neut" || sim.log[0].type === "bad" ? C.red : sim.log[0].type === "warn" ? C.amber : sim.log[0].type === "good" ? C.green : "#5A6472"
       }
     }, "[", sim.log[0].t.toFixed(1), "s] ", sim.log[0].msg) : /*#__PURE__*/React.createElement("span", null, "awaiting siege")));
-  })(), sim.ended && /*#__PURE__*/React.createElement("div", {
+  })(), sim.ended && typeof document !== "undefined" && ReactDOM.createPortal(/*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
       inset: 0,
@@ -13438,7 +13448,7 @@ function CapacitorTrainer() {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 10
+      zIndex: 100
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -13462,7 +13472,7 @@ function CapacitorTrainer() {
     const tier = secs >= 300 ? "ELITE" : secs >= 180 ? "VETERAN" : secs >= 90 ? "CAPABLE" : secs >= 45 ? "GREEN" : "ROOKIE";
     const tierColor = secs >= 180 ? C.green : secs >= 90 ? C.amber : C.red;
     const capUptime = Math.max(0, Math.round(100 * (1 - sim.stats.dry / Math.max(1, secs))));
-    const injEff = sim.stats.charges > 0 ? Math.round(100 * (sim.stats.charges - sim.stats.wastedInj) / sim.stats.charges) : null;
+    const injEff = sim.stats.charges > 0 ? Math.round(100 * (sim.stats.charges - sim.stats.injWasted) / sim.stats.charges) : null;
     const sweetPct = Math.round(100 * sim.stats.sweet / Math.max(1, secs));
     const gunSlots = Math.max(1, fit.modules.filter(m => m.kind === "gun" || m.kind === "remoteRep").length);
     const objUptime = Math.round(100 * sim.stats.gunUp / Math.max(1, secs * gunSlots));
@@ -13470,16 +13480,18 @@ function CapacitorTrainer() {
     const _s = sim.stats;
     const _maxHP = effHpMax(fit, "shield") + effHpMax(fit, "armor") + effHpMax(fit, "hull");
     const _endHP = sim.shield + sim.armor + sim.hull;
-    const scoreParts = [["Reps sustained", 1 - clamp01(_s.capOuts / 5), 30],
-    // well-timed injects kept every module cycling
-    ["Inject efficiency", _s.charges > 0 ? clamp01((_s.charges - _s.wastedInj) / _s.charges) : 1, 26],
-    // didn't inject too early
-    ["No over-repping", 1 - clamp01(_s.overRep / Math.max(1, _s.repDone + _s.overRep)), 22],
-    // reps applied to real damage
-    ["Objective uptime", clamp01(objUptime / 100), 12],
-    // guns / reps stayed online
+    const _nHard = fit.modules.filter(m => m.kind === "hardener").length;
+    const _hardUptime = _nHard > 0 ? clamp01(1 - _s.hardOffS / Math.max(1, secs * _nHard)) : 1;
+    const scoreParts = _nHard > 0 ? [["Booster timing", 1 - clamp01(_s.capOuts / 5), 30],
+    // injected in time to keep every rep cycling
+    ["Inject efficiency", _s.charges > 0 ? clamp01((_s.charges - _s.injWasted) / _s.charges) : 1, 26],
+    // every cap booster spent with the shield booster running
+    ["Strong reps", 1 - clamp01(_s.overRep / Math.max(1, _s.repDone + _s.overRep)), 22],
+    // reps landed on real damage
+    ["Hardeners up", _hardUptime, 12],
+    // hardeners kept active the whole cycle
     ["Finished healthy", clamp01(_endHP / Math.max(1, _maxHP)), 10] // buffer held to the end
-    ];
+    ] : [["Booster timing", 1 - clamp01(_s.capOuts / 5), 34], ["Inject efficiency", _s.charges > 0 ? clamp01((_s.charges - _s.injWasted) / _s.charges) : 1, 30], ["Strong reps", 1 - clamp01(_s.overRep / Math.max(1, _s.repDone + _s.overRep)), 26], ["Finished healthy", clamp01(_endHP / Math.max(1, _maxHP)), 10]];
     const perfScore = Math.round(scoreParts.reduce((a, p) => a + p[1] * p[2], 0));
     const grade = perfScore >= 95 ? "S" : perfScore >= 88 ? "A" : perfScore >= 78 ? "B" : perfScore >= 65 ? "C" : perfScore >= 50 ? "D" : "E";
     const gradeColor = perfScore >= 88 ? C.green : perfScore >= 65 ? C.amber : C.red;
@@ -13493,6 +13505,8 @@ function CapacitorTrainer() {
     const issues = [];
     if (sim.stats.capOuts > 1) issues.push([sim.stats.capOuts + 50, `${sim.stats.capOuts} modules cap-starved — stagger cycles`]);
     if (sim.stats.wastedInj > 0) issues.push([sim.stats.wastedInj + 30, `${sim.stats.wastedInj} injects wasted >85% — inject under 50%`]);
+    if (sim.stats.injNoRep > 0) issues.push([sim.stats.injNoRep + 35, `${sim.stats.injNoRep} cap boosters burned with reps off — keep your shield booster cycling`]);
+    if (_nHard > 0 && _hardUptime < 0.97) issues.push([Math.round((1 - _hardUptime) * 55), `Hardeners offline ${Math.round((1 - _hardUptime) * 100)}% of the fight — keep them active`]);
     if (sim.stats.overRep > sim.stats.repDone * 0.15) issues.push([26, `${fmt(sim.stats.overRep)} HP over-repped — pulse reps, don't run them on a full tank`]);
     if (sim.cargo === 0 && sim.fleet === 0 && sim.result !== "survived") issues.push([40, "Out of boosters — ration injections"]);
     issues.sort((a, b) => b[0] - a[0]);
@@ -13990,7 +14004,7 @@ function CapacitorTrainer() {
       fontFamily: mono,
       cursor: "pointer"
     }
-  }, "REFIT"))))));
+  }, "REFIT")))), document.body)));
 }
 function Stat({
   k,
