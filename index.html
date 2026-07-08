@@ -1807,9 +1807,7 @@ function effResist(sim, fit, layer) {
   return Math.max(0, Math.min(0.99, resist));
 }
 function linkRepMult(fit, kind) {
-  const L = fit.links || {};
-  // Command-burst rep bonuses do NOT apply to capital-class local reps, so shield boosters get nothing.
-  if ((kind === "armorRep" || kind === "remoteRep") && L.armorRep) return 1.3; // Rapid Repair burst
+  // Command-burst rep bonuses (Active Shielding / Rapid Repair) do NOT apply to capital-class local reps.
   return 1;
 }
 function effHpMax(fit, layer) {
@@ -3245,14 +3243,14 @@ function CapacitorTrainer() {
         letterSpacing: 2,
         marginBottom: 4
       }
-    }, "FLEET LINKS (COMMAND BURSTS)"), /*#__PURE__*/React.createElement("div", {
+    }, "COMMAND BURSTS"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 10,
         color: C.dim,
         marginBottom: 10
       }
-    }, "Simulate fleet boosts. Resist links add ~28% to that layer's resist, rep links add ~30% local rep, extension links add ~25% raw HP. Effects apply live to your EHP and rep tank."), /*#__PURE__*/React.createElement("div", {
+    }, "Simulate fleet boosts. Resist links add ~28% to that layer's resist; extension links add ~25% raw HP. (Rep bursts don't affect capital local reps, so they're omitted.) Effects apply live to your EHP."), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
@@ -3267,9 +3265,6 @@ function CapacitorTrainer() {
     }, {
       k: "armorRes",
       label: "Armor Energizing · +resist"
-    }, {
-      k: "armorRep",
-      label: "Rapid Repair · +armor rep"
     }, {
       k: "armorHp",
       label: "Armor Reinforcement · +armor HP"
