@@ -11640,6 +11640,18 @@ function CapacitorTrainer() {
   const [importReport, setImportReport] = useState(null);
   const [pyfaTank, setPyfaTank] = useState(0);
   const [showRack, setShowRack] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("capschool_onboarded_v1")) setShowOnboarding(true);
+    } catch (e) {}
+  }, []);
+  const dismissOnboarding = () => {
+    try {
+      localStorage.setItem("capschool_onboarded_v1", "1");
+    } catch (e) {}
+    setShowOnboarding(false);
+  };
   const dragId = useRef(null);
   const [hoverSlot, setHoverSlot] = useState(null);
   const [dragKind, setDragKind] = useState(null);
@@ -12061,7 +12073,108 @@ function CapacitorTrainer() {
           .ship-card { transition: transform .12s ease, border-color .12s ease; }
           .ship-card:hover { transform: translateY(-2px); }
           .chip { transition: all .1s ease; }
-        `), /*#__PURE__*/React.createElement("div", {
+        `), showOnboarding && /*#__PURE__*/React.createElement("div", {
+      onClick: dismissOnboarding,
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(4,8,14,.74)",
+        backdropFilter: "blur(3px)",
+        WebkitBackdropFilter: "blur(3px)",
+        zIndex: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      onClick: e => e.stopPropagation(),
+      style: {
+        maxWidth: 480,
+        width: "100%",
+        background: "linear-gradient(180deg, #121C2A 0%, #0B121C 100%)",
+        border: `1px solid ${C.amber}`,
+        borderRadius: 14,
+        padding: "26px 26px 22px",
+        boxShadow: "0 24px 70px rgba(0,0,0,.55)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        color: C.amber,
+        fontSize: 10,
+        letterSpacing: 4,
+        textTransform: "uppercase"
+      }
+    }, "Welcome to CapSchool"), /*#__PURE__*/React.createElement("h2", {
+      style: {
+        fontSize: 21,
+        fontWeight: 700,
+        margin: "8px 0 6px"
+      }
+    }, "How this works"), /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: C.dim,
+        fontSize: 13,
+        lineHeight: 1.6,
+        margin: "0 0 18px"
+      }
+    }, "A live capacitor & tank drill for sieged capitals. You know the mechanics — here’s just the tool."), [["1", "Set up", "Pick a ship and a threat scenario. Open Customize loadout to rebind hotkeys or edit the rack."], ["2", "Undock & siege", "Nothing lands until you activate Siege — that starts the challenge clock and the neut + DPS pressure."], ["3", "Hold the line", "Fire modules on F1–F8, inject cap boosters, and keep your capacitor off the floor. Survive for a full after-action report."]].map(([n, t, d]) => /*#__PURE__*/React.createElement("div", {
+      key: n,
+      style: {
+        display: "flex",
+        gap: 12,
+        marginBottom: 14,
+        alignItems: "flex-start"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flexShrink: 0,
+        width: 24,
+        height: 24,
+        borderRadius: "50%",
+        background: "#1A2634",
+        border: `1px solid ${C.amber}`,
+        color: C.amber,
+        fontFamily: mono,
+        fontSize: 12,
+        fontWeight: 700,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, n), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 13,
+        fontWeight: 700,
+        color: C.text
+      }
+    }, t), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.dim,
+        lineHeight: 1.5,
+        marginTop: 2
+      }
+    }, d)))), /*#__PURE__*/React.createElement("button", {
+      onClick: dismissOnboarding,
+      style: {
+        width: "100%",
+        marginTop: 8,
+        background: C.amber,
+        color: "#14100A",
+        border: "none",
+        borderRadius: 8,
+        padding: "12px",
+        fontFamily: mono,
+        fontSize: 13,
+        fontWeight: 700,
+        letterSpacing: 1,
+        cursor: "pointer",
+        textTransform: "uppercase"
+      }
+    }, "Got it — let’s fly"))), /*#__PURE__*/React.createElement("div", {
       style: {
         maxWidth: 1040,
         margin: "0 auto"
@@ -12088,7 +12201,20 @@ function CapacitorTrainer() {
         margin: "8px 0 6px",
         letterSpacing: -0.5
       }
-    }, "Capital Capacitor Trainer")), /*#__PURE__*/React.createElement("button", {
+    }, "Capital Capacitor Trainer"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setShowOnboarding(true),
+      style: {
+        background: "transparent",
+        border: "none",
+        color: C.dim,
+        fontFamily: mono,
+        fontSize: 12,
+        cursor: "pointer",
+        padding: 0,
+        textDecoration: "underline",
+        textUnderlineOffset: 3
+      }
+    }, "How it works")), /*#__PURE__*/React.createElement("button", {
       onClick: start,
       className: "undock-btn",
       style: {
