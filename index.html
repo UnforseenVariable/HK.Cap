@@ -12099,6 +12099,8 @@ function CapacitorTrainer() {
           .undock-btn { animation: undockGlow 3s ease-in-out infinite; transition: transform .14s ease, filter .14s ease; }
           .undock-btn:hover { transform: translateY(-1px); filter: brightness(1.06); animation-duration: 1.6s; }
           .undock-btn:active { transform: translateY(0); }
+          @media (max-width: 470px) { #root { zoom: 0.92; } }
+          @media (max-width: 380px) { #root { zoom: 0.84; } }
           .ship-card { transition: transform .12s ease, border-color .12s ease; }
           .ship-card:hover { transform: translateY(-2px); }
           .chip { transition: all .1s ease; }
@@ -13045,7 +13047,10 @@ function CapacitorTrainer() {
         @media (max-width: 1680px) { #root { zoom: 1.45; } }
         @media (max-width: 1440px) { #root { zoom: 1.35; } }
         @media (max-width: 1200px) { #root { zoom: 1.25; } }
-        @media (max-width: 900px) { #root { zoom: 1.1; } }`), /*#__PURE__*/React.createElement("div", {
+        @media (max-width: 900px) { #root { zoom: 1.1; } }
+        @media (max-width: 700px) { #root { zoom: 1; } }
+        @media (max-width: 470px) { #root { zoom: 0.9; } }
+        @media (max-width: 380px) { #root { zoom: 0.8; } }`), /*#__PURE__*/React.createElement("div", {
     style: {
       maxWidth: 1080,
       margin: "0 auto"
@@ -13475,7 +13480,7 @@ function CapacitorTrainer() {
       border: `1px solid ${sim.result === "survived" ? C.green : C.red}`,
       borderRadius: 10,
       padding: 26,
-      width: 520,
+      width: "min(520px, 92vw)",
       maxHeight: "90vh",
       overflowY: "auto"
     }
