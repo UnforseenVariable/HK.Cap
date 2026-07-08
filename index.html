@@ -13501,16 +13501,14 @@ function CapacitorTrainer() {
     const _endHP = sim.shield + sim.armor + sim.hull;
     const _nHard = fit.modules.filter(m => m.kind === "hardener").length;
     const _hardUptime = _nHard > 0 ? clamp01(1 - _s.hardOffS / Math.max(1, secs * _nHard)) : 1;
-    const scoreParts = _nHard > 0 ? [["Booster timing", 1 - clamp01(_s.capOuts / 5), 30],
-    // injected in time to keep every rep cycling
-    ["Inject efficiency", _s.charges > 0 ? clamp01((_s.charges - _s.injWasted) / _s.charges) : 1, 26],
+    const scoreParts = _nHard > 0 ? [["Inject efficiency", _s.charges > 0 ? clamp01((_s.charges - _s.injWasted) / _s.charges) : 1, 42],
     // every cap booster spent with the shield booster running
-    ["Strong reps", 1 - clamp01(_s.overRep / Math.max(1, _s.repDone + _s.overRep)), 22],
+    ["Strong reps", 1 - clamp01(_s.overRep / Math.max(1, _s.repDone + _s.overRep)), 34],
     // reps landed on real damage
-    ["Hardeners up", _hardUptime, 12],
+    ["Hardeners up", _hardUptime, 14],
     // hardeners kept active the whole cycle
     ["Finished healthy", clamp01(_endHP / Math.max(1, _maxHP)), 10] // buffer held to the end
-    ] : [["Booster timing", 1 - clamp01(_s.capOuts / 5), 34], ["Inject efficiency", _s.charges > 0 ? clamp01((_s.charges - _s.injWasted) / _s.charges) : 1, 30], ["Strong reps", 1 - clamp01(_s.overRep / Math.max(1, _s.repDone + _s.overRep)), 26], ["Finished healthy", clamp01(_endHP / Math.max(1, _maxHP)), 10]];
+    ] : [["Inject efficiency", _s.charges > 0 ? clamp01((_s.charges - _s.injWasted) / _s.charges) : 1, 50], ["Strong reps", 1 - clamp01(_s.overRep / Math.max(1, _s.repDone + _s.overRep)), 40], ["Finished healthy", clamp01(_endHP / Math.max(1, _maxHP)), 10]];
     const perfScore = Math.round(scoreParts.reduce((a, p) => a + p[1] * p[2], 0));
     const grade = perfScore >= 95 ? "S" : perfScore >= 88 ? "A" : perfScore >= 78 ? "B" : perfScore >= 65 ? "C" : perfScore >= 50 ? "D" : "E";
     const gradeColor = perfScore >= 88 ? C.green : perfScore >= 65 ? C.amber : C.red;
