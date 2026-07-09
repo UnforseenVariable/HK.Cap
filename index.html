@@ -11769,7 +11769,8 @@ function CapacitorTrainer() {
   const [eveBusy, setEveBusy] = useState(false);
   const [eveError, setEveError] = useState("");
   const [pingMs, setPingMs] = useState(0);
-  const [tickMode, setTickMode] = useState(true); // true = 1 Hz server tick (TQ), false = smooth
+  const [tickMode, setTickMode] = useState(false); // 1 Hz server tick — optional, off by default
+  const [pingEnabled, setPingEnabled] = useState(false); // latency sim — optional, off by default
   const [board, setBoard] = useState({
     phoenix: [],
     zirnitra: []
@@ -11998,7 +11999,7 @@ function CapacitorTrainer() {
           ...s.mods[k]
         });
         let out = s;
-        if (tickMode || scnRef.current && scnRef.current.locked) {
+        if (tickMode) {
           // 1 Hz server tick: logic resolves in whole seconds; displayT advances smoothly for animation
           s.displayT = (s.displayT != null ? s.displayT : s.t) + 0.1 * s.speed;
           s.tickAccum = (s.tickAccum || 0) + 0.1 * s.speed;
@@ -12214,7 +12215,7 @@ function CapacitorTrainer() {
     }
     setLbSubmitted(false);
     setLbResult(null);
-    setSim(initSim(fit, scenario, pingMs));
+    setSim(initSim(fit, scenario, pingEnabled ? pingMs : 0));
     setScreen("sim");
   };
 
@@ -13103,7 +13104,6 @@ function CapacitorTrainer() {
           const sc = JSON.parse(JSON.stringify(s));
           setScenario(sc);
           if (sc.locked) {
-            setTickMode(true);
             const shield = String(fit.name || "").toLowerCase().includes("phoenix");
             setFit(f => ({
               ...f,
@@ -13355,45 +13355,93 @@ function CapacitorTrainer() {
         textTransform: "uppercase",
         margin: "28px 0 12px"
       }
-    }, "Server Tick"), /*#__PURE__*/React.createElement("div", {
+    }, "Simulation Options ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#5A6472"
+      }
+    }, "· advanced, off by default")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.panel,
         border: `1px solid ${C.line}`,
         borderRadius: 12,
         padding: 16,
         display: "flex",
+        flexDirection: "column",
+        gap: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
         alignItems: "center",
-        gap: 10,
+        gap: 8,
         flexWrap: "wrap"
       }
-    }, [["1 Hz · Tranquility", true], ["Smooth", false]].filter(([label, v]) => !scenario.locked || v === true).map(([label, v]) => {
-      const tl = scenario.locked;
-      const sel = tl ? true : tickMode === v;
-      return /*#__PURE__*/React.createElement("button", {
-        key: label,
-        onClick: tl ? undefined : () => setTickMode(v),
-        style: {
-          background: tl ? "#14210F" : sel ? C.amber : "transparent",
-          color: tl ? C.green : sel ? "#14100A" : C.dim,
-          fontWeight: tl ? 400 : sel ? 700 : 400,
-          border: `1px solid ${tl ? C.green : sel ? C.amber : C.line}`,
-          borderRadius: 7,
-          padding: tl ? "7px 12px" : "7px 14px",
-          fontFamily: mono,
-          fontSize: 11,
-          cursor: tl ? "default" : "pointer",
-          whiteSpace: "nowrap"
-        }
-      }, tl ? "🔒 " : "", label);
-    }), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
-        fontSize: 10,
+        fontSize: 11,
+        color: C.text,
+        width: 84
+      }
+    }, "Server tick"), [["1 Hz", true], ["Smooth", false]].map(([label, v]) => /*#__PURE__*/React.createElement("button", {
+      key: label,
+      onClick: () => setTickMode(v),
+      style: {
+        background: tickMode === v ? C.amber : "transparent",
+        color: tickMode === v ? "#14100A" : C.dim,
+        fontWeight: tickMode === v ? 700 : 400,
+        border: `1px solid ${tickMode === v ? C.amber : C.line}`,
+        borderRadius: 7,
+        padding: "6px 13px",
+        fontFamily: mono,
+        fontSize: 11,
+        cursor: "pointer"
+      }
+    }, label)), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
         color: C.dim,
         flex: 1,
-        minWidth: 200
+        minWidth: 150
       }
-    }, scenario.locked ? "Locked to 1 Hz for the benchmark — matches Tranquility." : tickMode ? "Modules resolve once per second, like the server — time injects to land on a tick." : "Continuous sim — smoother, but not TQ-accurate.")), /*#__PURE__*/React.createElement("div", {
+    }, tickMode ? "Modules resolve once per second, like Tranquility." : "Continuous sim (default).")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 11,
+        color: C.text,
+        width: 84
+      }
+    }, "Latency sim"), [["On", true], ["Off", false]].map(([label, v]) => /*#__PURE__*/React.createElement("button", {
+      key: label,
+      onClick: () => setPingEnabled(v),
+      style: {
+        background: pingEnabled === v ? C.amber : "transparent",
+        color: pingEnabled === v ? "#14100A" : C.dim,
+        fontWeight: pingEnabled === v ? 700 : 400,
+        border: `1px solid ${pingEnabled === v ? C.amber : C.line}`,
+        borderRadius: 7,
+        padding: "6px 13px",
+        fontFamily: mono,
+        fontSize: 11,
+        cursor: "pointer"
+      }
+    }, label)), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: C.dim,
+        flex: 1,
+        minWidth: 150
+      }
+    }, pingEnabled ? `Inputs delayed by your ping (~${pingMs || "?"}ms).` : "No input delay (default)."))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 24
       }
@@ -14849,7 +14897,7 @@ function CapacitorTrainer() {
     onClick: () => {
       setLbSubmitted(false);
       setLbResult(null);
-      setSim(initSim(fit, scenario, pingMs));
+      setSim(initSim(fit, scenario, pingEnabled ? pingMs : 0));
     },
     style: {
       flex: 1,
