@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -10,6 +11,7 @@
 </style>
 </head>
 <body>
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -12541,6 +12543,28 @@ function CapacitorTrainer() {
         }
       }, "×")), /*#__PURE__*/React.createElement("div", {
         style: {
+          marginTop: 12,
+          padding: "10px 12px",
+          borderRadius: 9,
+          background: "rgba(240,178,62,.10)",
+          border: `1px solid ${C.amber}55`,
+          display: "flex",
+          alignItems: "center",
+          gap: 9
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 14
+        }
+      }, "🚧"), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontFamily: mono,
+          fontSize: 10.5,
+          color: C.amber,
+          lineHeight: 1.5
+        }
+      }, "Coming soon — leaderboards are not live yet. Verified corp pilots will compete here for the top of the board.")), /*#__PURE__*/React.createElement("div", {
+        style: {
           display: "flex",
           gap: 8,
           marginTop: 14
@@ -12860,10 +12884,27 @@ function CapacitorTrainer() {
         fontWeight: 700,
         cursor: "pointer",
         padding: 0,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
         textDecoration: "underline",
         textUnderlineOffset: 3
       }
-    }, "🏆 Leaderboard"))), /*#__PURE__*/React.createElement("div", {
+    }, "🏆 Leaderboard"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 8,
+        background: `${C.amber}22`,
+        color: C.amber,
+        border: `1px solid ${C.amber}66`,
+        borderRadius: 3,
+        padding: "1px 5px",
+        fontWeight: 700,
+        letterSpacing: 0.5
+      }
+    }, "SOON")))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -13645,7 +13686,31 @@ function CapacitorTrainer() {
         fontSize: 10,
         cursor: "pointer"
       }
-    }, "+ ", t.name))))));
+    }, "+ ", t.name)))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "24px 4px 4px",
+        borderTop: `1px solid ${C.line}`,
+        marginTop: 36,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 10,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: "#5A6472",
+        letterSpacing: 0.5
+      }
+    }, "© 2026 Aloen · CapSchool · All rights reserved."), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: "#3E4652"
+      }
+    }, "Unofficial fan tool · Not affiliated with Fenris Creations"))));
   }
 
   // ---------- SIM ----------
