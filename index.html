@@ -10543,7 +10543,7 @@ function makeStaggeredNeuts(gjs, n = 6, cycleS = 12, startS = 6) {
   return out;
 }
 const SCENARIOS = [{
-  name: "Endurance — survive one siege cycle",
+  name: "Endurance — Survive One Siege Cycle",
   blurb: "The standard test: hold out for one full siege cycle (5:00) against 6 staggered Bhaalgorns hitting ~300 GJ/s each (~1,800 GJ/s total neut pressure) plus 60,000 raw DPS. If the cycle ends and you're still alive, the challenge is complete. (Fixed parameters — not editable.)",
   locked: true,
   durationS: 300,
@@ -10587,7 +10587,7 @@ const SCENARIOS = [{
     count: 1
   }]
 }, {
-  name: "Custom — set GJ/s + DPS",
+  name: "Custom — Set GJ/s + DPS",
   blurb: "Dial in a flat neut pressure and incoming DPS. The neut load is spread across 6 auto-staggered sources, so cap drain is smooth and continuous rather than spiky.",
   simple: true,
   neutGJs: 500,
@@ -10596,7 +10596,7 @@ const SCENARIOS = [{
   dpsStartS: 5,
   neuts: makeStaggeredNeuts(500)
 }, {
-  name: "Bhaalgorn wing (heavy neut)",
+  name: "Bhaalgorn Wing (Heavy Neut)",
   blurb: "Three Bhaalgorns anchor on you with bonused heavy neutralizers — roughly 450 GJ/s of pure cap warfare and only light damage. A cap-attrition fight: outlast their neuts.",
   durationS: 300,
   incomingDps: 2500,
@@ -10639,7 +10639,7 @@ const SCENARIOS = [{
     count: 1
   }]
 }, {
-  name: "Heavy Armor fleet",
+  name: "Heavy Armor Fleet",
   blurb: "A full armor battleship gang: Bhaalgorns neuting while Megathrons and Apocs pour on ~25k sustained DPS behind logi. Constant pressure on cap and tank at the same time.",
   durationS: 300,
   incomingDps: 25000,
@@ -10730,7 +10730,7 @@ const SCENARIOS = [{
     count: 1
   }]
 }, {
-  name: "Dreadbomb (capital neuts)",
+  name: "Dreadbomb (Capital Neuts)",
   blurb: "You got dropped. A wing of dreads lands with capital neutralizers — staggered 4,400 GJ capital-neut spikes every 8s plus ~55k DPS. Survive the opening; burn injectors hard.",
   durationS: 180,
   incomingDps: 55000,
@@ -10773,7 +10773,7 @@ const SCENARIOS = [{
     count: 1
   }]
 }, {
-  name: "Capital neut duel (1v1)",
+  name: "Capital Neut Duel (1v1)",
   blurb: "A mirror dread cycles capital neutralizers at you — 4,400 GJ spikes every 48s, staggered, with moderate damage. Time your injections to land just before each spike.",
   durationS: 240,
   incomingDps: 4000,
@@ -10792,7 +10792,7 @@ const SCENARIOS = [{
     count: 1
   }]
 }, {
-  name: "Clean range (no hostiles)",
+  name: "Clean Range (No Hostiles)",
   blurb: "No neuts, no damage. Learn your fit's cap curve, module costs, and reload rhythm at your own pace.",
   durationS: 300,
   incomingDps: 0,
@@ -12414,7 +12414,7 @@ function CapacitorTrainer() {
         fontWeight: 700,
         margin: "8px 0 6px"
       }
-    }, "How this works"), /*#__PURE__*/React.createElement("p", {
+    }, "How This Works"), /*#__PURE__*/React.createElement("p", {
       style: {
         color: C.dim,
         fontSize: 13,
@@ -12792,7 +12792,7 @@ function CapacitorTrainer() {
         fontSize: 11,
         color: C.dim
       }
-    }, "verifying with EVE…") : !eveAuth && eveError ? /*#__PURE__*/React.createElement("span", {
+    }, "Verifying with EVE…") : !eveAuth && eveError ? /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 11,
@@ -12827,7 +12827,7 @@ function CapacitorTrainer() {
         textUnderlineOffset: 3,
         padding: 0
       }
-    }, "log out"))), /*#__PURE__*/React.createElement("div", {
+    }, "Log Out"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: isMobile ? "column" : "row",
@@ -12870,7 +12870,7 @@ function CapacitorTrainer() {
         textDecoration: "underline",
         textUnderlineOffset: 3
       }
-    }, "How it works"), /*#__PURE__*/React.createElement("button", {
+    }, "How It Works"), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         loadBoard();
         setLbOpen(true);
@@ -13417,7 +13417,7 @@ function CapacitorTrainer() {
         color: C.text,
         width: 84
       }
-    }, "Server tick"), [["1 Hz", true], ["Smooth", false]].map(([label, v]) => /*#__PURE__*/React.createElement("button", {
+    }, "Server Tick"), [["1 Hz", true], ["Smooth", false]].map(([label, v]) => /*#__PURE__*/React.createElement("button", {
       key: label,
       onClick: () => setTickMode(v),
       style: {
@@ -13453,7 +13453,7 @@ function CapacitorTrainer() {
         color: C.text,
         width: 84
       }
-    }, "Latency sim"), [["On", true], ["Off", false]].map(([label, v]) => /*#__PURE__*/React.createElement("button", {
+    }, "Latency Sim"), [["On", true], ["Off", false]].map(([label, v]) => /*#__PURE__*/React.createElement("button", {
       key: label,
       onClick: () => setPingEnabled(v),
       style: {
@@ -13492,7 +13492,7 @@ function CapacitorTrainer() {
         letterSpacing: 1,
         cursor: "pointer"
       }
-    }, showRack ? "▾" : "▸", " Customize loadout ", /*#__PURE__*/React.createElement("span", {
+    }, showRack ? "▾" : "▸", " Customize Loadout ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: "#5A6472"
       }
@@ -14035,7 +14035,7 @@ function CapacitorTrainer() {
       color: C.amber,
       lineHeight: 1.5
     }
-  }, "Set up your modules, then ", /*#__PURE__*/React.createElement("b", null, "activate Siege"), " to begin. No damage or neut pressure lands until siege is online — the 5:00 challenge clock starts then.")), /*#__PURE__*/React.createElement("div", {
+  }, "Set up your modules, then ", /*#__PURE__*/React.createElement("b", null, "activate Siege"), " to begin. No damage or neut pressure lands until Siege is online — the 5:00 challenge clock starts then.")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 36,
@@ -14310,11 +14310,11 @@ function CapacitorTrainer() {
         fontSize: 8,
         color: "#4A5666"
       }
-    }, /*#__PURE__*/React.createElement("span", null, "peak-regen band 20–40%"), sim.log && sim.log.length > 0 ? /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, "Peak-Regen Band 20–40%"), sim.log && sim.log.length > 0 ? /*#__PURE__*/React.createElement("span", {
       style: {
         color: sim.log[0].type === "neut" || sim.log[0].type === "bad" ? C.red : sim.log[0].type === "warn" ? C.amber : sim.log[0].type === "good" ? C.green : "#5A6472"
       }
-    }, "[", sim.log[0].t.toFixed(1), "s] ", sim.log[0].msg) : /*#__PURE__*/React.createElement("span", null, "awaiting siege")));
+    }, "[", sim.log[0].t.toFixed(1), "s] ", sim.log[0].msg) : /*#__PURE__*/React.createElement("span", null, "Awaiting Siege")));
   })(), sim.ended && typeof document !== "undefined" && ReactDOM.createPortal(/*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
@@ -14711,11 +14711,11 @@ function CapacitorTrainer() {
         fontSize: 8,
         color: "#5A5F66"
       }
-    }, "peak-regen band shaded · ", /*#__PURE__*/React.createElement("span", {
+    }, "Peak-Regen Band Shaded · ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: C.cyan
       }
-    }, "●"), " inject")), /*#__PURE__*/React.createElement("svg", {
+    }, "●"), " Inject")), /*#__PURE__*/React.createElement("svg", {
       viewBox: `0 0 ${CW} ${CH}`,
       style: svgStyle
     }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
@@ -14791,15 +14791,15 @@ function CapacitorTrainer() {
       style: {
         color: C.cyan
       }
-    }, "—"), " shield\xA0 ", /*#__PURE__*/React.createElement("span", {
+    }, "—"), " Shield\xA0 ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: C.armor
       }
-    }, "—"), " armor\xA0 ", /*#__PURE__*/React.createElement("span", {
+    }, "—"), " Armor\xA0 ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: C.hull
       }
-    }, "—"), " hull")), /*#__PURE__*/React.createElement("svg", {
+    }, "—"), " Hull")), /*#__PURE__*/React.createElement("svg", {
       viewBox: `0 0 ${CW} ${CH}`,
       style: svgStyle
     }, [0.25, 0.5, 0.75].map(g => /*#__PURE__*/React.createElement("line", {
