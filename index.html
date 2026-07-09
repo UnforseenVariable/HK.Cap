@@ -12931,14 +12931,7 @@ function CapacitorTrainer() {
         width: isMobile ? "100%" : "auto",
         textAlign: "center"
       }
-    }, eveAuth && eveAuth.verified ? "UNDOCK ▸" : "🔒 Log in to undock"), !(eveAuth && eveAuth.verified) && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: mono,
-        fontSize: 9,
-        color: C.dim,
-        letterSpacing: 1
-      }
-    }, "corp verification required to fly"))), /*#__PURE__*/React.createElement("div", {
+    }, eveAuth && eveAuth.verified ? "UNDOCK ▸" : "🔒 Log in to undock"))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 10,
@@ -14554,58 +14547,7 @@ function CapacitorTrainer() {
       year: "numeric",
       month: "short",
       day: "numeric"
-    }))), eveAuth && eveAuth.verified && /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginTop: 12
-      }
-    }, lbSubmitted && lbResult ? /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: "center",
-        padding: "12px",
-        borderRadius: 10,
-        background: "rgba(127,219,122,.10)",
-        border: `1px solid ${C.green}`
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: mono,
-        fontSize: 13,
-        color: C.green,
-        fontWeight: 700
-      }
-    }, lbResult.rank === 1 ? "👑 #1 — TOP OF THE BOARD" : `▲ Posted — you're #${lbResult.rank} of ${lbResult.total}`), /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setLbTab(shipKey(fit.name));
-        setLbOpen(true);
-      },
-      style: {
-        marginTop: 8,
-        background: "transparent",
-        border: `1px solid ${C.amber}`,
-        color: C.amber,
-        borderRadius: 7,
-        padding: "6px 14px",
-        fontFamily: mono,
-        fontSize: 11,
-        fontWeight: 700,
-        cursor: "pointer"
-      }
-    }, "View leaderboard →")) : /*#__PURE__*/React.createElement("button", {
-      onClick: () => submitScore(shipKey(fit.name), eveAuth.name, perfScore),
-      style: {
-        width: "100%",
-        background: C.amber,
-        color: "#14100A",
-        border: "none",
-        borderRadius: 8,
-        padding: "11px",
-        fontFamily: mono,
-        fontSize: 12,
-        fontWeight: 700,
-        letterSpacing: 1,
-        cursor: "pointer"
-      }
-    }, "🏆 Post ", perfScore, " to the leaderboard")), /*#__PURE__*/React.createElement("div", {
+    }))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 13,
         display: "grid",
