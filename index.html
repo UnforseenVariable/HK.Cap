@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v13 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v14 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v13 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v14 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -13827,7 +13827,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v13 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v14 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14189,6 +14189,14 @@ function CapacitorTrainer() {
       fontWeight: hoverZone === "left" ? 700 : 400
     }
   }, hoverZone === "left" ? "release here" : "dock left of capacitor"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 36,
+      alignItems: "flex-start",
+      justifyContent: "center",
+      flexWrap: isMobile ? "wrap" : "nowrap"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     ref: gaugeRef,
     style: {
       display: "flex",
@@ -14317,7 +14325,7 @@ function CapacitorTrainer() {
       maxWidth: 356,
       lineHeight: 1.6
     }
-  }, "Right-click a module = toggle auto-repeat (red ✕ = off) · Drag to rearrange · R = reload · Space = pause · −/+ on gauge = sim speed")), isMobile && defensePanel), (() => {
+  }, "Right-click a module = toggle auto-repeat (red ✕ = off) · Drag to rearrange · R = reload · Space = pause · −/+ on gauge = sim speed"))), isMobile && defensePanel), (() => {
     const H = sim.hist || [];
     const maxT = Math.max(30, ct);
     const W = 696,
