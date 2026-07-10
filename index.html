@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v41 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v42 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v41 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v42 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -11093,7 +11093,8 @@ function initSim(fit, scenario, pingMs) {
       arSum: 0,
       arSq: 0,
       hpN: 0,
-      ehpSum: 0
+      ehpSum: 0,
+      bleed: 0
     },
     ended: false,
     result: null,
@@ -11267,11 +11268,15 @@ function step(sim, fit, scenario, dt, log) {
   // Incoming damage
   if (scenario.incomingDps > 0 && combatOn && ct >= scenario.dpsStartS) {
     const applyRaw = raw => {
+      const _sf = String(fit.name || "").toLowerCase().includes("phoenix");
       const layers = [["shield", effResist(sim, fit, "shield")], ["armor", effResist(sim, fit, "armor")], ["hull", effResist(sim, fit, "hull")]];
       for (const [k, res] of layers) {
         if (raw <= 0) break;
         const eff = Math.max(0.01, 1 - res);
         const hpLoss = raw * eff;
+        const removed = Math.min(hpLoss, sim[k]);
+        // bleed = HP lost past the primary tank layer (armor+hull for shield fits, hull for armor fits)
+        if (_sf ? k === "armor" || k === "hull" : k === "hull") sim.stats.bleed = (sim.stats.bleed || 0) + removed;
         if (hpLoss <= sim[k]) {
           sim[k] -= hpLoss;
           raw = 0;
@@ -14055,7 +14060,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v41 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v42 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14741,10 +14746,14 @@ function CapacitorTrainer() {
     const _wsum = scoreParts.reduce((a, p) => a + p[2], 0);
     const _logAvg = scoreParts.reduce((a, p) => a + p[2] * Math.log(Math.max(EPS, p[1])), 0) / _wsum;
     const _base = Math.exp(_logAvg); // 0..1, fraction of optimal play
+    // --- bleed modifier: docks the score for letting damage bleed past the primary tank layer ---
+    const _primaryMax = _isShield ? effHpMax(fit, "shield") : effHpMax(fit, "armor");
+    const _bleedRatio = _primaryMax > 0 ? (_s.bleed || 0) / _primaryMax : 0;
+    const mBleed = Math.max(0.5, 1 - _bleedRatio * 0.6); // full primary-layer's worth bled -> ~0.5x
     // --- final score: survivors on 0..100; deaths get a continuous 0..49 gradient ---
     let perfScore;
     if (sim.result === "survived") {
-      perfScore = Math.round(Math.min(100, _base * 100));
+      perfScore = Math.round(Math.min(100, _base * mBleed * 100));
     } else {
       const _prog = clamp01(secs / _dur);
       perfScore = Math.round(Math.min(49, _prog * 45 * (0.5 + 0.5 * _base)));
@@ -14761,6 +14770,7 @@ function CapacitorTrainer() {
     const issues = [];
     if (sim.stats.wastedInj > 0) issues.push([sim.stats.wastedInj + 30, `${sim.stats.wastedInj} injects wasted >85% — inject under 50%`]);
     if (sim.stats.injNoRep > 0) issues.push([sim.stats.injNoRep + 35, `${sim.stats.injNoRep} injects fueled nothing — time boosters to a rep${_isShield ? " or hardener" : ""} cycle`]);
+    if ((_s.bleed || 0) > _primaryMax * 0.12) issues.push([Math.round(_bleedRatio * 100) + 45, `${fmt(_s.bleed)} HP bled past your ${_isShield ? "shield into armor" : "armor into structure"} — you fell behind on reps (score docked ${Math.round((1 - mBleed) * 100)}%)`]);
     if (_nHard > 0 && _hardUptime < 0.97) issues.push([Math.round((1 - _hardUptime) * 55), `Hardeners offline ${Math.round((1 - _hardUptime) * 100)}% of the fight — keep them active`]);
     if (sim.stats.overRep > sim.stats.repDone * 0.15) issues.push([26, `${fmt(sim.stats.overRep)} HP over-repped — pulse reps, don't run them on a full tank`]);
     if (sim.cargo === 0 && sim.fleet === 0 && sim.result !== "survived") issues.push([40, "Out of boosters — ration injections"]);
