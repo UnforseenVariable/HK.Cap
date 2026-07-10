@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v43 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v45 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v43 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v45 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -10928,10 +10928,12 @@ function ModIcon({
   size,
   color,
   strokeWidth,
-  style
+  style,
+  loaded
 }) {
   const [failed, setFailed] = useState(false);
-  const tid = failed ? null : moduleTypeId(mod);
+  // cap boosters show the loaded Cap Booster 3200 charge (41489) while fueled, and their bare module icon when empty
+  const tid = failed ? null : mod.kind === "capBooster" && loaded ? 41489 : moduleTypeId(mod);
   if (tid) return /*#__PURE__*/React.createElement("img", {
     src: `https://images.evetech.net/types/${tid}/icon?size=64`,
     alt: "",
@@ -11766,6 +11768,7 @@ function ModuleButton({
   }, /*#__PURE__*/React.createElement(ModIcon, {
     mod: mod,
     size: 22,
+    loaded: mod.kind === "capBooster" && rt.charges > 0,
     color: rt.active ? rt.wantOff ? "#F2B4AF" : "#CFEACB" : inFlight ? C.violet : reloading ? C.amber : "#8A8F98",
     strokeWidth: 1.8,
     style: reloading || inFlight ? {
@@ -14060,7 +14063,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v43 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v45 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
