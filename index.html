@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v29 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v30 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v29 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v30 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -11123,11 +11123,14 @@ function step(sim, fit, scenario, dt, log) {
       sim.volleyAccum += dt;
       while (sim.volleyAccum >= cyc) {
         sim.volleyAccum -= cyc;
-        const volley = (A.dps || 0) * (sim.spoolMult || 1) * cyc;
+        const _x = Math.random();
+        const _q = _x < 0.01 ? 3 : 0.5 + _x; // EVE hit quality: 1% wrecking shot (3x), else ~0.5-1.5x
+        const _lbl = _q >= 3 ? "WRECKING " : _q >= 1.25 ? "smashing " : _q < 0.7 ? "glancing " : "";
+        const volley = (A.dps || 0) * (sim.spoolMult || 1) * cyc * _q;
         applyRaw(volley);
         sim.lastVolleyT = sim.t;
         sim.lastVolleyDmg = volley;
-        log(`💥 ${A.weapon} — ${fmt(volley)} raw incoming`, "bad");
+        log(`💥 ${_lbl}${A.weapon} — ${fmt(volley)} raw incoming`, "bad");
         if (A.spoolStep) sim.spoolMult = Math.min(A.spoolMax || 2.5, (sim.spoolMult || 1) + A.spoolStep);
       }
     } else {
@@ -13853,7 +13856,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v29 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v30 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
