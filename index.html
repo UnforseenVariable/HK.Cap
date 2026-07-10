@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v39 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v40 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v39 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v40 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -11984,10 +11984,13 @@ function CapacitorTrainer() {
   const [pingEnabled, setPingEnabled] = useState(false); // latency sim — optional, off by default
   const [board, setBoard] = useState({
     phoenix: [],
-    zirnitra: []
+    zirnitra: [],
+    phoenix_sync: [],
+    zirnitra_sync: []
   });
   const [lbOpen, setLbOpen] = useState(false);
   const [lbTab, setLbTab] = useState("phoenix");
+  const [lbMode, setLbMode] = useState("std"); // "std" | "sync" (1 Hz tick / latency on)
   const [lbSubmitted, setLbSubmitted] = useState(false);
   const [lbResult, setLbResult] = useState(null);
   const [lbError, setLbError] = useState("");
@@ -12018,9 +12021,11 @@ function CapacitorTrainer() {
   const shipKey = n => String(n || "").toLowerCase().includes("phoenix") ? "phoenix" : "zirnitra";
   const loadBoard = () => {
     fetch(EVE_LEADERBOARD).then(r => r.json()).then(b => {
-      if (b && (b.phoenix || b.zirnitra)) setBoard({
+      if (b && (b.phoenix || b.zirnitra || b.phoenix_sync || b.zirnitra_sync)) setBoard({
         phoenix: b.phoenix || [],
-        zirnitra: b.zirnitra || []
+        zirnitra: b.zirnitra || [],
+        phoenix_sync: b.phoenix_sync || [],
+        zirnitra_sync: b.zirnitra_sync || []
       });
     }).catch(() => {});
   };
@@ -12031,12 +12036,13 @@ function CapacitorTrainer() {
     if (c.indexOf("esi") === 0) return "EVE servers unreachable — try again shortly.";
     return "Couldn't post your score.";
   };
-  const submitScore = (ship, score) => {
+  const submitScore = (ship, score, mode) => {
     const token = eveAuth && eveAuth.token;
     if (!token) {
       setLbError("Log in with EVE to post a score.");
       return;
     }
+    const key = ship + (mode === "sync" ? "_sync" : "");
     fetch(EVE_LEADERBOARD, {
       method: "POST",
       headers: {
@@ -12045,18 +12051,20 @@ function CapacitorTrainer() {
       body: JSON.stringify({
         ship,
         score,
-        token
+        token,
+        mode
       })
     }).then(r => r.json()).then(res => {
       if (Array.isArray(res)) {
         setBoard(b => ({
           ...b,
-          [ship]: res
+          [key]: res
         }));
         const me = eveAuth && eveAuth.name ? eveAuth.name.toLowerCase() : "";
         const rank = res.findIndex(e => e.name && e.name.toLowerCase() === me) + 1;
         setLbResult({
           ship,
+          mode,
           rank: rank || res.length,
           total: res.length,
           score
@@ -12442,7 +12450,7 @@ function CapacitorTrainer() {
 
   // ---------- SETUP ----------
   const leaderboardModal = lbOpen && (() => {
-    const rows = board[lbTab] || [];
+    const rows = board[lbTab + (lbMode === "sync" ? "_sync" : "")] || [];
     const meName = eveAuth && eveAuth.name ? eveAuth.name.toLowerCase() : null;
     const myIdx = meName ? rows.findIndex(e => e.name && e.name.toLowerCase() === meName) : -1;
     return /*#__PURE__*/React.createElement("div", {
@@ -12519,6 +12527,27 @@ function CapacitorTrainer() {
         padding: "9px 8px",
         fontFamily: mono,
         fontSize: 11,
+        fontWeight: 700,
+        cursor: "pointer"
+      }
+    }, label))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginTop: 8
+      }
+    }, [["std", "Standard"], ["sync", "1 Hz + Latency"]].map(([k, label]) => /*#__PURE__*/React.createElement("button", {
+      key: k,
+      onClick: () => setLbMode(k),
+      style: {
+        flex: 1,
+        background: lbMode === k ? `${C.amber}22` : "transparent",
+        border: `1px solid ${lbMode === k ? C.amber : C.line}`,
+        color: lbMode === k ? C.amber : C.dim,
+        borderRadius: 9,
+        padding: "7px 8px",
+        fontFamily: mono,
+        fontSize: 10,
         fontWeight: 700,
         cursor: "pointer"
       }
@@ -13988,7 +14017,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v39 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v40 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14876,6 +14905,7 @@ function CapacitorTrainer() {
     }, lbResult.rank === 1 ? "👑 #1 — TOP OF THE BOARD" : `▲ Posted — you're #${lbResult.rank} of ${lbResult.total}`), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setLbTab(shipKey(fit.name));
+        setLbMode(tickMode || sim && sim.pingMs > 0 ? "sync" : "std");
         setLbOpen(true);
       },
       style: {
@@ -14891,7 +14921,7 @@ function CapacitorTrainer() {
         cursor: "pointer"
       }
     }, "View leaderboard →")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-      onClick: () => submitScore(shipKey(fit.name), perfScore),
+      onClick: () => submitScore(shipKey(fit.name), perfScore, tickMode || sim && sim.pingMs > 0 ? "sync" : "std"),
       style: {
         width: "100%",
         background: C.amber,
@@ -14905,7 +14935,7 @@ function CapacitorTrainer() {
         letterSpacing: 1,
         cursor: "pointer"
       }
-    }, "🏆 Post ", perfScore, " to the leaderboard"), lbError && /*#__PURE__*/React.createElement("div", {
+    }, "🏆 Post ", perfScore, " to the ", tickMode || sim && sim.pingMs > 0 ? "1 Hz + Latency" : "Standard", " board"), lbError && /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 10,
