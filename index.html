@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v26 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v27 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v26 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v27 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -10544,7 +10544,7 @@ function makeStaggeredNeuts(gjs, n = 6, cycleS = 12, startS = 6) {
 }
 const SCENARIOS = [{
   name: "Endurance — Survive One Siege Cycle",
-  blurb: "The standard test: hold out for one full siege cycle (5:00) against 6 staggered Bhaalgorns hitting ~300 GJ/s each (~1,800 GJ/s total neut pressure) plus 60,000 total DPS: a randomly-rolled hostile dread lands its share as volleys — a Phoenix Navy Issue (~15k DPS, big XL-torpedo volleys every 13s) or a Zirnitra (Entropic Disintegrator volleys every ~11s that start soft near 5k DPS and spool up toward a 25k cap the longer it holds on you) — while the remainder arrives as sustained subcapital fire. Same 60k total each run; only the volley rhythm changes. If the cycle ends and you're still alive, the challenge is complete. (Fixed parameters — not editable.)",
+  blurb: "The standard test: hold out for one full siege cycle (5:00) against 6 staggered Bhaalgorns hitting ~300 GJ/s each (~1,800 GJ/s total neut pressure) plus 60,000 total DPS: a randomly-rolled hostile dread lands its share as volleys — a Phoenix Navy Issue (~15.5k DPS, 155k XL-torpedo volleys every 10s) or a Zirnitra (Entropic Disintegrator volleys every ~11s that start soft near 5k DPS and spool up toward a 25k cap the longer it holds on you) — while the remainder arrives as sustained subcapital fire. Same 60k total each run; only the volley rhythm changes. If the cycle ends and you're still alive, the challenge is complete. (Fixed parameters — not editable.)",
   locked: true,
   durationS: 300,
   incomingDps: 60000,
@@ -10898,8 +10898,8 @@ function initSim(fit, scenario, pingMs) {
       const A = [{
         name: "Phoenix Navy Issue",
         weapon: "XL torpedo volley",
-        cycle: 13,
-        dps: 15000
+        cycle: 10,
+        dps: 15500
       }, {
         name: "Zirnitra",
         weapon: "Entropic Disintegrator",
@@ -13853,7 +13853,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v26 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v27 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
