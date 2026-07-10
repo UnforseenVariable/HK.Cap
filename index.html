@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v11 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v13 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v11 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v13 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -10926,7 +10926,8 @@ function initSim(fit, scenario, pingMs) {
       shSq: 0,
       arSum: 0,
       arSq: 0,
-      hpN: 0
+      hpN: 0,
+      ehpSum: 0
     },
     ended: false,
     result: null,
@@ -11167,6 +11168,8 @@ function step(sim, fit, scenario, dt, log) {
     const _arF = sim.armor / Math.max(1, effHpMax(fit, "armor"));
     if (_shF < sim.stats.minShield) sim.stats.minShield = _shF;
     if (_arF < sim.stats.minArmor) sim.stats.minArmor = _arF;
+    const _me = effHpMax(fit, "shield") + effHpMax(fit, "armor") + effHpMax(fit, "hull");
+    sim.stats.ehpSum += (sim.shield + sim.armor + sim.hull) / Math.max(1, _me);
     sim.stats.shSum += _shF;
     sim.stats.shSq += _shF * _shF;
     sim.stats.arSum += _arF;
@@ -12143,6 +12146,7 @@ function CapacitorTrainer() {
     if (screen !== "sim") return;
     const h = e => {
       const key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+      if (/^F[1-8]$/.test(e.key)) e.preventDefault(); // stop browser F-key defaults (F1 help, F5 refresh) mid-run
       const hit = fitRef.current.modules.find(m => m.hotkey && m.hotkey === key);
       if (hit) {
         e.preventDefault();
@@ -12163,6 +12167,15 @@ function CapacitorTrainer() {
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [screen, toggleModule, reloadBoosters]);
+
+  // F1 opens the browser's help page — suppress it everywhere so it never fires while playing
+  useEffect(() => {
+    const block = e => {
+      if (e.key === "F1") e.preventDefault();
+    };
+    window.addEventListener("keydown", block);
+    return () => window.removeEventListener("keydown", block);
+  }, []);
   const manualReloadOne = useCallback((id, source = "cargo") => {
     setSim(prev => {
       if (!prev || prev.ended) return prev;
@@ -13814,7 +13827,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v11 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v13 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14488,8 +14501,10 @@ function CapacitorTrainer() {
     const mTank = clamp01(0.6 * clamp01(_mean) + 0.4 * _steady);
     // Hardener uptime (shield fit only; armor resists are passive so it is exempt)
     const _hardUptime = _nHard > 0 ? clamp01(1 - _s.hardOffS / Math.max(1, secs * _nHard)) : 1;
+    // Average EHP held across the fight (total effective HP, higher is better)
+    const mEHP = clamp01(_s.ehpSum / _n);
     // --- ship-specific factor tables (weights sum to 1) ---
-    const scoreParts = _isShield ? [["Rep conversion", mRepConv, 0.24], ["Inject efficiency", mInject, 0.28], ["Shield safety", mTank, 0.30], ["Hardener uptime", _hardUptime, 0.18]] : [["Rep conversion", mRepConv, 0.44], ["Inject efficiency", mInject, 0.30], ["Armor safety", mTank, 0.26]];
+    const scoreParts = _isShield ? [["Rep conversion", mRepConv, 0.22], ["Inject efficiency", mInject, 0.24], ["Shield safety", mTank, 0.24], ["Hardener uptime", _hardUptime, 0.14], ["Avg EHP", mEHP, 0.16]] : [["Rep conversion", mRepConv, 0.38], ["Inject efficiency", mInject, 0.26], ["Armor safety", mTank, 0.22], ["Avg EHP", mEHP, 0.14]];
     // --- gated weighted GEOMETRIC mean: weakness in any dimension drags the whole score down ---
     const EPS = 0.03;
     const _wsum = scoreParts.reduce((a, p) => a + p[2], 0);
