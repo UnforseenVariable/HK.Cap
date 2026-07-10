@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v15 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v22 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v15 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v22 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -10544,11 +10544,12 @@ function makeStaggeredNeuts(gjs, n = 6, cycleS = 12, startS = 6) {
 }
 const SCENARIOS = [{
   name: "Endurance — Survive One Siege Cycle",
-  blurb: "The standard test: hold out for one full siege cycle (5:00) against 6 staggered Bhaalgorns hitting ~300 GJ/s each (~1,800 GJ/s total neut pressure) plus 60,000 raw DPS. If the cycle ends and you're still alive, the challenge is complete. (Fixed parameters — not editable.)",
+  blurb: "The standard test: hold out for one full siege cycle (5:00) against 6 staggered Bhaalgorns hitting ~300 GJ/s each (~1,800 GJ/s total neut pressure) plus 60,000 total DPS: a randomly-rolled hostile dread lands its share as volleys — a Phoenix Navy Issue (~15k DPS, big XL-torpedo volleys every 13s) or a Zirnitra (Entropic Disintegrator volleys every ~11s that start soft near 5k DPS and spool up toward a 25k cap the longer it holds on you) — while the remainder arrives as sustained subcapital fire. Same 60k total each run; only the volley rhythm changes. If the cycle ends and you're still alive, the challenge is complete. (Fixed parameters — not editable.)",
   locked: true,
   durationS: 300,
   incomingDps: 60000,
   dpsStartS: 5,
+  volley: true,
   neuts: [{
     label: "Bhaalgorn 1",
     amount: 3600,
@@ -10893,6 +10894,29 @@ function initSim(fit, scenario, pingMs) {
     displayT: 0,
     mods,
     neutNext: scenario.neuts.map(n => n.startS),
+    ...(() => {
+      const A = [{
+        name: "Phoenix Navy Issue",
+        weapon: "XL torpedo volley",
+        cycle: 13,
+        dps: 15000
+      }, {
+        name: "Zirnitra",
+        weapon: "Entropic Disintegrator",
+        cycle: 11,
+        dps: 5000,
+        spoolStep: 0.15,
+        spoolMax: 5
+      }][Math.random() < 0.5 ? 0 : 1];
+      return {
+        attacker: A,
+        volleyCycle: A.cycle
+      };
+    })(),
+    volleyAccum: 0,
+    lastVolleyT: -99,
+    lastVolleyDmg: 0,
+    spoolMult: 1,
     siegeStartT: fit.modules.some(m => m.kind === "siege") ? null : 0,
     lastNeutHit: -99,
     lastNeutAmt: 0,
@@ -11074,19 +11098,40 @@ function step(sim, fit, scenario, dt, log) {
 
   // Incoming damage
   if (scenario.incomingDps > 0 && combatOn && ct >= scenario.dpsStartS) {
-    let raw = scenario.incomingDps * dt;
-    const layers = [["shield", effResist(sim, fit, "shield")], ["armor", effResist(sim, fit, "armor")], ["hull", effResist(sim, fit, "hull")]];
-    for (const [k, res] of layers) {
-      if (raw <= 0) break;
-      const eff = Math.max(0.01, 1 - res);
-      const hpLoss = raw * eff;
-      if (hpLoss <= sim[k]) {
-        sim[k] -= hpLoss;
-        raw = 0;
-      } else {
-        raw -= sim[k] / eff;
-        sim[k] = 0;
+    const applyRaw = raw => {
+      const layers = [["shield", effResist(sim, fit, "shield")], ["armor", effResist(sim, fit, "armor")], ["hull", effResist(sim, fit, "hull")]];
+      for (const [k, res] of layers) {
+        if (raw <= 0) break;
+        const eff = Math.max(0.01, 1 - res);
+        const hpLoss = raw * eff;
+        if (hpLoss <= sim[k]) {
+          sim[k] -= hpLoss;
+          raw = 0;
+        } else {
+          raw -= sim[k] / eff;
+          sim[k] = 0;
+        }
       }
+    };
+    if (scenario.volley) {
+      // total DPS is fixed: the rolled capital lands its share as volleys, the remainder is sustained subcapital fire
+      const A = sim.attacker || {};
+      const capDps = (A.dps || 0) * (sim.spoolMult || 1); // disintegrator spools up over cycles
+      const sustainedDps = Math.max(0, scenario.incomingDps - capDps);
+      if (sustainedDps > 0) applyRaw(sustainedDps * dt);
+      const cyc = sim.volleyCycle || 13;
+      sim.volleyAccum += dt;
+      while (sim.volleyAccum >= cyc) {
+        sim.volleyAccum -= cyc;
+        const volley = (A.dps || 0) * (sim.spoolMult || 1) * cyc;
+        applyRaw(volley);
+        sim.lastVolleyT = sim.t;
+        sim.lastVolleyDmg = volley;
+        log(`💥 ${A.weapon} — ${fmt(volley)} raw incoming`, "bad");
+        if (A.spoolStep) sim.spoolMult = Math.min(A.spoolMax || 2.5, (sim.spoolMult || 1) + A.spoolStep);
+      }
+    } else {
+      applyRaw(scenario.incomingDps * dt);
     }
   }
 
@@ -13321,7 +13366,7 @@ function CapacitorTrainer() {
         fontWeight: 700,
         letterSpacing: 1
       }
-    }, "LOCKED TEST"), " · Incoming ", scenario.incomingDps.toLocaleString(), " DPS · ", scenario.neuts.length, " staggered neut sources · ", scenario.neuts.reduce((a, n) => a + n.amount * n.count, 0).toLocaleString(), " GJ per volley") : scenario.simple ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    }, "LOCKED TEST"), " · Incoming ", scenario.incomingDps.toLocaleString(), " DPS (random PNI/Zirnitra volleys + sustained) · ", scenario.neuts.length, " staggered neut sources · ", scenario.neuts.reduce((a, n) => a + n.amount * n.count, 0).toLocaleString(), " GJ per volley") : scenario.simple ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 10,
@@ -13827,7 +13872,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v15 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v22 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14058,7 +14103,16 @@ function CapacitorTrainer() {
       color: combatOn && ct >= scenario.dpsStartS ? C.red : C.dim,
       marginTop: 6
     }
-  }, "Incoming ", fmt(scenario.incomingDps), " DPS · ", !combatOn ? "Holding" : ct < scenario.dpsStartS ? `In ${(scenario.dpsStartS - ct).toFixed(0)}s` : "Landing"), scenario.neuts.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Incoming ", fmt(scenario.incomingDps), " DPS · ", !combatOn ? "Holding" : ct < scenario.dpsStartS ? `In ${(scenario.dpsStartS - ct).toFixed(0)}s` : "Landing", scenario.volley && sim && sim.attacker ? (() => {
+    const cur = Math.round(sim.attacker.dps * (sim.spoolMult || 1));
+    const sus = Math.max(0, scenario.incomingDps - cur);
+    const sp = sim.attacker.spoolMax ? Math.round(((sim.spoolMult || 1) - 1) / (sim.attacker.spoolMax - 1) * 100) : null;
+    return /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.dim
+      }
+    }, " · ", sim.attacker.name, " ", fmt(cur), sp != null ? ` · spool ${sp}%` : "", " (", sim.attacker.cycle, "s) + ", fmt(sus), " sustained");
+  })() : null), scenario.neuts.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       color: neutAvg > 0 ? C.red : C.dim
     }
