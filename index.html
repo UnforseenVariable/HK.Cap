@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v42 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v43 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v42 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v43 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -14060,7 +14060,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v42 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v43 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14813,6 +14813,35 @@ function CapacitorTrainer() {
         marginTop: 2
       }
     }, sub));
+    const Chip = ({
+      label,
+      value,
+      tone
+    }) => /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "4px 11px",
+        borderRadius: 7,
+        background: "rgba(255,255,255,.025)",
+        border: `1px solid ${tone ? tone + "44" : C.line}`
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 8,
+        letterSpacing: 1.5,
+        color: "#5A6472"
+      }
+    }, label), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 11,
+        fontWeight: 700,
+        color: tone || C.text
+      }
+    }, value));
     const H = sim.hist || [];
     const maxT = Math.max(1, H.length ? H[H.length - 1].t : secs);
     const CW = 472,
@@ -14918,14 +14947,34 @@ function CapacitorTrainer() {
         fontFamily: mono,
         fontSize: 10,
         color: C.dim,
-        marginTop: 4
+        marginTop: 6
       }
-    }, "Endurance drill · full siege cycle held · survived ", secs.toFixed(0), "s", sim.pingMs ? ` · at ${sim.pingMs}ms ping` : "", tickMode ? " · 1 Hz tick" : ""), /*#__PURE__*/React.createElement("div", {
+    }, "Endurance · full siege cycle held"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 6,
+        justifyContent: "center",
+        marginTop: 10
+      }
+    }, /*#__PURE__*/React.createElement(Chip, {
+      label: "HELD",
+      value: `${secs.toFixed(0)}s`,
+      tone: C.green
+    }), /*#__PURE__*/React.createElement(Chip, {
+      label: "PING",
+      value: sim.pingMs ? `${sim.pingMs} ms` : "0 ms",
+      tone: sim.pingMs ? C.amber : undefined
+    }), /*#__PURE__*/React.createElement(Chip, {
+      label: "TICK",
+      value: tickMode ? "1 Hz" : "cont.",
+      tone: tickMode ? C.amber : undefined
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 9,
         color: "#5A6472",
-        marginTop: 6
+        marginTop: 13
       }
     }, new Date().toLocaleDateString(undefined, {
       year: "numeric",
