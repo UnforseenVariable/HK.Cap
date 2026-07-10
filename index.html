@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v24 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v26 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v24 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v26 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -12293,26 +12293,6 @@ function CapacitorTrainer() {
       return s;
     });
   }, [pushLog]);
-  useEffect(() => {
-    if (!draggingCharges) return;
-    const zoneAt = x => {
-      const r = gaugeRef.current && gaugeRef.current.getBoundingClientRect();
-      if (!r) return "modules";
-      return x < r.left ? "left" : "modules";
-    };
-    const mv = e => setHoverZone(zoneAt(e.clientX));
-    const up = e => {
-      setChargePos(zoneAt(e.clientX));
-      setDraggingCharges(false);
-      setHoverZone(null);
-    };
-    window.addEventListener("pointermove", mv);
-    window.addEventListener("pointerup", up);
-    return () => {
-      window.removeEventListener("pointermove", mv);
-      window.removeEventListener("pointerup", up);
-    };
-  }, [draggingCharges]);
   const start = () => {
     if (!eveAuth || !eveAuth.verified) {
       eveLogin();
@@ -13873,7 +13853,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v24 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v26 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -13920,8 +13900,24 @@ function CapacitorTrainer() {
     onPointerDown: e => {
       e.preventDefault();
       e.stopPropagation();
+      const zoneAt = x => {
+        const r = gaugeRef.current && gaugeRef.current.getBoundingClientRect();
+        return !r ? "modules" : x < r.left ? "left" : "modules";
+      };
       setHoverZone(null);
       setDraggingCharges(true);
+      const mv = ev => setHoverZone(zoneAt(ev.clientX));
+      const end = ev => {
+        window.removeEventListener("pointermove", mv);
+        window.removeEventListener("pointerup", end);
+        window.removeEventListener("pointercancel", end);
+        if (ev.type === "pointerup") setChargePos(zoneAt(ev.clientX));
+        setDraggingCharges(false);
+        setHoverZone(null);
+      };
+      window.addEventListener("pointermove", mv);
+      window.addEventListener("pointerup", end);
+      window.addEventListener("pointercancel", end);
     },
     title: "Drag to move these windows left of the capacitor (or back under the modules)",
     style: {
@@ -14591,7 +14587,6 @@ function CapacitorTrainer() {
     }
     // prioritised coaching (worst first)
     const issues = [];
-    if (sim.stats.capOuts > 1) issues.push([sim.stats.capOuts + 50, `${sim.stats.capOuts} modules cap-starved — stagger cycles`]);
     if (sim.stats.wastedInj > 0) issues.push([sim.stats.wastedInj + 30, `${sim.stats.wastedInj} injects wasted >85% — inject under 50%`]);
     if (sim.stats.injNoRep > 0) issues.push([sim.stats.injNoRep + 35, `${sim.stats.injNoRep} injects fueled nothing — time boosters to a rep${_isShield ? " or hardener" : ""} cycle`]);
     if (_nHard > 0 && _hardUptime < 0.97) issues.push([Math.round((1 - _hardUptime) * 55), `Hardeners offline ${Math.round((1 - _hardUptime) * 100)}% of the fight — keep them active`]);
