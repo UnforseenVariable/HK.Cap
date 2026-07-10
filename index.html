@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v4 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v6 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v4 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v6 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -11807,6 +11807,7 @@ function CapacitorTrainer() {
   const [lbTab, setLbTab] = useState("phoenix");
   const [lbSubmitted, setLbSubmitted] = useState(false);
   const [lbResult, setLbResult] = useState(null);
+  const [lbError, setLbError] = useState("");
   useEffect(() => {
     fetch("https://capschool-eve.liberalrhino.workers.dev/ping-estimate").then(r => r.json()).then(d => {
       if (d && typeof d.ping === "number") setPingMs(Math.round(d.ping));
@@ -11840,7 +11841,19 @@ function CapacitorTrainer() {
       });
     }).catch(() => {});
   };
-  const submitScore = (ship, name, score) => {
+  const lbErrText = code => {
+    const c = String(code || "");
+    if (c.indexOf("not_in_corp") === 0) return "That character is not in the authorized corp.";
+    if (c.indexOf("auth_failed") === 0 || c.indexOf("token_expired") >= 0) return "Your EVE session expired — log in again to post.";
+    if (c.indexOf("esi") === 0) return "EVE servers unreachable — try again shortly.";
+    return "Couldn't post your score.";
+  };
+  const submitScore = (ship, score) => {
+    const token = eveAuth && eveAuth.token;
+    if (!token) {
+      setLbError("Log in with EVE to post a score.");
+      return;
+    }
     fetch(EVE_LEADERBOARD, {
       method: "POST",
       headers: {
@@ -11848,25 +11861,29 @@ function CapacitorTrainer() {
       },
       body: JSON.stringify({
         ship,
-        name,
-        score
+        score,
+        token
       })
-    }).then(r => r.json()).then(arr => {
-      if (Array.isArray(arr)) {
+    }).then(r => r.json()).then(res => {
+      if (Array.isArray(res)) {
         setBoard(b => ({
           ...b,
-          [ship]: arr
+          [ship]: res
         }));
-        const rank = arr.findIndex(e => e.name && name && e.name.toLowerCase() === name.toLowerCase()) + 1;
+        const me = eveAuth && eveAuth.name ? eveAuth.name.toLowerCase() : "";
+        const rank = res.findIndex(e => e.name && e.name.toLowerCase() === me) + 1;
         setLbResult({
           ship,
-          rank: rank || arr.length,
-          total: arr.length,
+          rank: rank || res.length,
+          total: res.length,
           score
         });
         setLbSubmitted(true);
+        setLbError("");
+      } else {
+        setLbError(lbErrText(res && res.error));
       }
-    }).catch(() => {});
+    }).catch(() => setLbError("Post failed — network error."));
   };
   useEffect(() => {
     loadBoard();
@@ -11932,7 +11949,8 @@ function CapacitorTrainer() {
           name,
           corpId,
           corpName,
-          verified: corpId === EVE_CORP_ID
+          verified: corpId === EVE_CORP_ID,
+          token: data.cap_session
         };
         setEveAuth(auth);
         try {
@@ -12243,6 +12261,7 @@ function CapacitorTrainer() {
     }
     setLbSubmitted(false);
     setLbResult(null);
+    setLbError("");
     setSim(initSim(fit, scenario, pingEnabled ? pingMs : 0));
     setScreen("sim");
   };
@@ -13795,7 +13814,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v4 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v6 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14693,8 +14712,8 @@ function CapacitorTrainer() {
         fontWeight: 700,
         cursor: "pointer"
       }
-    }, "View leaderboard →")) : /*#__PURE__*/React.createElement("button", {
-      onClick: () => submitScore(shipKey(fit.name), eveAuth.name, perfScore),
+    }, "View leaderboard →")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+      onClick: () => submitScore(shipKey(fit.name), perfScore),
       style: {
         width: "100%",
         background: C.amber,
@@ -14708,7 +14727,15 @@ function CapacitorTrainer() {
         letterSpacing: 1,
         cursor: "pointer"
       }
-    }, "🏆 Post ", perfScore, " to the leaderboard")), /*#__PURE__*/React.createElement("div", {
+    }, "🏆 Post ", perfScore, " to the leaderboard"), lbError && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 10,
+        color: C.red,
+        textAlign: "center",
+        marginTop: 7
+      }
+    }, lbError))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 13,
         display: "grid",
@@ -15065,6 +15092,7 @@ function CapacitorTrainer() {
     onClick: () => {
       setLbSubmitted(false);
       setLbResult(null);
+      setLbError("");
       setSim(initSim(fit, scenario, pingEnabled ? pingMs : 0));
     },
     style: {
