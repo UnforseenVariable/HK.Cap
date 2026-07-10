@@ -10966,9 +10966,13 @@ function startCycle(sim, fit, m, log) {
     sim.stats.injected += sim.cap - before;
     sim.stats.charges += 1;
     if (sim.injMarks) sim.injMarks.push(sim.t);
-    const repRunning = fit.modules.some(mm => (mm.kind === "shieldBooster" || mm.kind === "armorRep") && sim.mods[mm.id] && sim.mods[mm.id].active);
+    const _shieldFit = String(fit.name || "").toLowerCase().includes("phoenix");
+    const repRunning = fit.modules.some(mm => {
+      const rr = sim.mods[mm.id];
+      return rr && rr.active && (mm.kind === "shieldBooster" || mm.kind === "armorRep" || _shieldFit && mm.kind === "hardener");
+    });
     if (before / fit.capMax > 0.85) sim.stats.wastedInj += 1;
-    // a cap booster is wasted only if the shield booster isn't running — allow a 1s grace window for it to come on
+    // a booster fuels the tank if a rep (or, on the Phoenix, a shield hardener) is running — 1s grace to come on
     if (!repRunning) {
       (sim.pendingInj || (sim.pendingInj = [])).push(sim.t);
     }
@@ -11183,7 +11187,11 @@ function step(sim, fit, scenario, dt, log) {
 
   // resolve deferred injections: wasted only if the shield booster hasn't come on within a 1s grace window
   if (sim.pendingInj && sim.pendingInj.length) {
-    const repNow = fit.modules.some(mm => (mm.kind === "shieldBooster" || mm.kind === "armorRep") && sim.mods[mm.id] && sim.mods[mm.id].active);
+    const _shieldFit = String(fit.name || "").toLowerCase().includes("phoenix");
+    const repNow = fit.modules.some(mm => {
+      const rr = sim.mods[mm.id];
+      return rr && rr.active && (mm.kind === "shieldBooster" || mm.kind === "armorRep" || _shieldFit && mm.kind === "hardener");
+    });
     sim.pendingInj = sim.pendingInj.filter(pt => {
       if (repNow) return false; // booster came on within the window — good injection
       if (sim.t - pt >= 1) {
@@ -12561,28 +12569,6 @@ function CapacitorTrainer() {
         }
       }, "×")), /*#__PURE__*/React.createElement("div", {
         style: {
-          marginTop: 12,
-          padding: "10px 12px",
-          borderRadius: 9,
-          background: "rgba(240,178,62,.10)",
-          border: `1px solid ${C.amber}55`,
-          display: "flex",
-          alignItems: "center",
-          gap: 9
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 14
-        }
-      }, "🚧"), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: mono,
-          fontSize: 10.5,
-          color: C.amber,
-          lineHeight: 1.5
-        }
-      }, "Coming soon — leaderboards are not live yet. Verified corp pilots will compete here for the top of the board.")), /*#__PURE__*/React.createElement("div", {
-        style: {
           display: "flex",
           gap: 8,
           marginTop: 14
@@ -12902,27 +12888,10 @@ function CapacitorTrainer() {
         fontWeight: 700,
         cursor: "pointer",
         padding: 0,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
         textDecoration: "underline",
         textUnderlineOffset: 3
       }
-    }, "🏆 Leaderboard"), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 8,
-        background: `${C.amber}22`,
-        color: C.amber,
-        border: `1px solid ${C.amber}66`,
-        borderRadius: 3,
-        padding: "1px 5px",
-        fontWeight: 700,
-        letterSpacing: 0.5
-      }
-    }, "SOON")))), /*#__PURE__*/React.createElement("div", {
+    }, "🏆 Leaderboard"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -14376,9 +14345,9 @@ function CapacitorTrainer() {
     const _nHard = fit.modules.filter(m => m.kind === "hardener").length;
     // --- controllable sub-metrics, each scored as a fraction of optimal play [0..1] ---
     // Inject efficiency: charges spent usefully (not overcapped, not with reps off) vs total spent
-    const mInject = _s.charges > 0 ? clamp01((_s.charges - _s.injWasted - _s.wastedInj) / _s.charges) : 1;
-    // Cap discipline: depth-weighted time spent below the 20% danger floor (0 danger = perfect)
-    const mCap = clamp01(1 - _s.capDangerInt / (0.2 * Math.max(1, secs)));
+    const mInject = _s.charges > 0 ? clamp01(1 - _s.wastedInj / _s.charges) : 1;
+    // Rep conversion: every booster fuels a rep (or, on the Phoenix, keeps a shield hardener up)
+    const mRepConv = _s.charges > 0 ? clamp01(1 - _s.injNoRep / _s.charges) : 1;
     // Tank safety + steadiness on the ACTIVE layer (shield for Phoenix, armor for Zirnitra)
     const _n = Math.max(1, _s.hpN);
     const _minLayer = clamp01(_isShield ? _s.minShield : _s.minArmor);
@@ -14391,20 +14360,16 @@ function CapacitorTrainer() {
     // Hardener uptime (shield fit only; armor resists are passive so it is exempt)
     const _hardUptime = _nHard > 0 ? clamp01(1 - _s.hardOffS / Math.max(1, secs * _nHard)) : 1;
     // --- ship-specific factor tables (weights sum to 1) ---
-    const scoreParts = _isShield ? [["Inject efficiency", mInject, 0.34], ["Cap discipline", mCap, 0.24], ["Shield safety", mTank, 0.24], ["Hardener uptime", _hardUptime, 0.18]] : [["Inject efficiency", mInject, 0.34], ["Cap discipline", mCap, 0.40], ["Armor safety", mTank, 0.26]];
+    const scoreParts = _isShield ? [["Rep conversion", mRepConv, 0.24], ["Inject efficiency", mInject, 0.28], ["Shield safety", mTank, 0.30], ["Hardener uptime", _hardUptime, 0.18]] : [["Rep conversion", mRepConv, 0.44], ["Inject efficiency", mInject, 0.30], ["Armor safety", mTank, 0.26]];
     // --- gated weighted GEOMETRIC mean: weakness in any dimension drags the whole score down ---
     const EPS = 0.03;
     const _wsum = scoreParts.reduce((a, p) => a + p[2], 0);
     const _logAvg = scoreParts.reduce((a, p) => a + p[2] * Math.log(Math.max(EPS, p[1])), 0) / _wsum;
     const _base = Math.exp(_logAvg); // 0..1, fraction of optimal play
-    // --- difficulty multiplier: harder settings pay more (drives leaderboard competition) ---
-    let _diff = 1;
-    if (tickMode) _diff *= 1.12;
-    if (pingEnabled && sim.pingMs) _diff *= 1 + Math.min(sim.pingMs, 300) / 1000;
     // --- final score: survivors on 0..100; deaths get a continuous 0..49 gradient ---
     let perfScore;
     if (sim.result === "survived") {
-      perfScore = Math.round(Math.min(100, _base * 100 * _diff));
+      perfScore = Math.round(Math.min(100, _base * 100));
     } else {
       const _prog = clamp01(secs / _dur);
       perfScore = Math.round(Math.min(49, _prog * 45 * (0.5 + 0.5 * _base)));
@@ -14421,7 +14386,7 @@ function CapacitorTrainer() {
     const issues = [];
     if (sim.stats.capOuts > 1) issues.push([sim.stats.capOuts + 50, `${sim.stats.capOuts} modules cap-starved — stagger cycles`]);
     if (sim.stats.wastedInj > 0) issues.push([sim.stats.wastedInj + 30, `${sim.stats.wastedInj} injects wasted >85% — inject under 50%`]);
-    if (sim.stats.injNoRep > 0) issues.push([sim.stats.injNoRep + 35, `${sim.stats.injNoRep} cap boosters burned with reps off — keep your shield booster cycling`]);
+    if (sim.stats.injNoRep > 0) issues.push([sim.stats.injNoRep + 35, `${sim.stats.injNoRep} injects fueled nothing — time boosters to a rep${_isShield ? " or hardener" : ""} cycle`]);
     if (_nHard > 0 && _hardUptime < 0.97) issues.push([Math.round((1 - _hardUptime) * 55), `Hardeners offline ${Math.round((1 - _hardUptime) * 100)}% of the fight — keep them active`]);
     if (sim.stats.overRep > sim.stats.repDone * 0.15) issues.push([26, `${fmt(sim.stats.overRep)} HP over-repped — pulse reps, don't run them on a full tank`]);
     if (sim.cargo === 0 && sim.fleet === 0 && sim.result !== "survived") issues.push([40, "Out of boosters — ration injections"]);
@@ -14590,7 +14555,58 @@ function CapacitorTrainer() {
       year: "numeric",
       month: "short",
       day: "numeric"
-    }))), /*#__PURE__*/React.createElement("div", {
+    }))), eveAuth && eveAuth.verified && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 12
+      }
+    }, lbSubmitted && lbResult ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        padding: "12px",
+        borderRadius: 10,
+        background: "rgba(127,219,122,.10)",
+        border: `1px solid ${C.green}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: mono,
+        fontSize: 13,
+        color: C.green,
+        fontWeight: 700
+      }
+    }, lbResult.rank === 1 ? "👑 #1 — TOP OF THE BOARD" : `▲ Posted — you're #${lbResult.rank} of ${lbResult.total}`), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setLbTab(shipKey(fit.name));
+        setLbOpen(true);
+      },
+      style: {
+        marginTop: 8,
+        background: "transparent",
+        border: `1px solid ${C.amber}`,
+        color: C.amber,
+        borderRadius: 7,
+        padding: "6px 14px",
+        fontFamily: mono,
+        fontSize: 11,
+        fontWeight: 700,
+        cursor: "pointer"
+      }
+    }, "View leaderboard →")) : /*#__PURE__*/React.createElement("button", {
+      onClick: () => submitScore(shipKey(fit.name), eveAuth.name, perfScore),
+      style: {
+        width: "100%",
+        background: C.amber,
+        color: "#14100A",
+        border: "none",
+        borderRadius: 8,
+        padding: "11px",
+        fontFamily: mono,
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: 1,
+        cursor: "pointer"
+      }
+    }, "🏆 Post ", perfScore, " to the leaderboard")), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 13,
         display: "grid",
