@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v22 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v23 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v22 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v23 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -12105,11 +12105,12 @@ function CapacitorTrainer() {
           out = step(s, fitRef.current, scnRef.current, 0.1 * s.speed, (m, ty) => pushLog(s, m, ty));
           out.displayT = out.t;
         }
-        // continuous exponential smoothing of the displayed HP toward the (quantized) true values
+        // displayed HP: snap DOWN instantly on damage so hits/volleys visibly chunk, ease UP on reps
         const _k = 0.3;
-        out.dShield = out.dShield == null ? out.shield : out.dShield + (out.shield - out.dShield) * _k;
-        out.dArmor = out.dArmor == null ? out.armor : out.dArmor + (out.armor - out.dArmor) * _k;
-        out.dHull = out.dHull == null ? out.hull : out.dHull + (out.hull - out.dHull) * _k;
+        const _ease = (d, v) => d == null || v < d ? v : d + (v - d) * _k;
+        out.dShield = _ease(out.dShield, out.shield);
+        out.dArmor = _ease(out.dArmor, out.armor);
+        out.dHull = _ease(out.dHull, out.hull);
         return out;
       });
     }, 100);
@@ -13872,7 +13873,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v22 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v23 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
