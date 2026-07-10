@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build 2026.07.10-nogrades -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v2 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build 2026.07.10-nogrades -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v2 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -12649,12 +12649,70 @@ function CapacitorTrainer() {
     return /*#__PURE__*/React.createElement("div", {
       style: {
         minHeight: "100vh",
-        background: `radial-gradient(1100px 560px at 50% -8%, #0C1524 0%, ${C.bg} 55%)`,
+        background: "transparent",
+        position: "relative",
+        zIndex: 1,
         color: C.text,
         padding: "40px 24px 72px",
         fontFamily: "system-ui, sans-serif"
       }
-    }, /*#__PURE__*/React.createElement("style", null, `
+    }, /*#__PURE__*/React.createElement("div", {
+      "aria-hidden": "true",
+      style: {
+        position: "fixed",
+        inset: 0,
+        zIndex: -1,
+        overflow: "hidden",
+        pointerEvents: "none"
+      }
+    }, /*#__PURE__*/React.createElement("style", null, `@media (prefers-reduced-motion: no-preference){@keyframes capBgDrift1{0%,100%{transform:translate3d(0,0,0) scale(1);opacity:.55}50%{transform:translate3d(4%,-3%,0) scale(1.18);opacity:.9}}@keyframes capBgDrift2{0%,100%{transform:translate3d(0,0,0) scale(1);opacity:.4}50%{transform:translate3d(-5%,4%,0) scale(1.12);opacity:.7}}@keyframes capBgStars1{from{transform:translateY(0)}to{transform:translateY(-260px)}}@keyframes capBgStars2{from{transform:translateY(0)}to{transform:translateY(-340px)}}}`), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        inset: 0,
+        background: "radial-gradient(1200px 620px at 50% -10%, #0C1524 0%, #070B12 58%)"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        top: "-15%",
+        left: "-8%",
+        width: "62%",
+        height: "62%",
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(52,110,170,.20), transparent 62%)",
+        filter: "blur(46px)",
+        animation: "capBgDrift1 38s ease-in-out infinite"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        bottom: "-22%",
+        right: "-12%",
+        width: "58%",
+        height: "58%",
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(240,178,62,.09), transparent 62%)",
+        filter: "blur(54px)",
+        animation: "capBgDrift2 52s ease-in-out infinite"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        inset: "-400px 0",
+        backgroundImage: "radial-gradient(1.5px 1.5px at 165px 77px, rgba(255,255,255,0.66), transparent), radial-gradient(1px 1px at 37px 48px, rgba(255,255,255,0.62), transparent), radial-gradient(1px 1px at 259px 109px, rgba(255,255,255,0.35), transparent), radial-gradient(1px 1px at 214px 35px, rgba(255,255,255,0.35), transparent), radial-gradient(2px 2px at 217px 30px, rgba(255,255,255,0.37), transparent), radial-gradient(2px 2px at 114px 31px, rgba(255,255,255,0.62), transparent), radial-gradient(1px 1px at 25px 113px, rgba(255,255,255,0.61), transparent), radial-gradient(1.5px 1.5px at 68px 148px, rgba(255,255,255,0.38), transparent), radial-gradient(2px 2px at 60px 157px, rgba(255,255,255,0.75), transparent), radial-gradient(2px 2px at 92px 52px, rgba(255,255,255,0.61), transparent), radial-gradient(1px 1px at 96px 190px, rgba(255,255,255,0.6), transparent), radial-gradient(2px 2px at 32px 30px, rgba(255,255,255,0.41), transparent), radial-gradient(1.5px 1.5px at 218px 160px, rgba(255,255,255,0.62), transparent), radial-gradient(1px 1px at 232px 185px, rgba(255,255,255,0.44), transparent), radial-gradient(1px 1px at 92px 124px, rgba(255,255,255,0.62), transparent), radial-gradient(1.5px 1.5px at 253px 175px, rgba(255,255,255,0.46), transparent), radial-gradient(2px 2px at 37px 60px, rgba(255,255,255,0.53), transparent), radial-gradient(1.5px 1.5px at 175px 77px, rgba(255,255,255,0.53), transparent)",
+        backgroundSize: "260px 260px",
+        animation: "capBgStars1 120s linear infinite"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        inset: "-400px 0",
+        backgroundImage: "radial-gradient(2px 2px at 39px 285px, rgba(255,255,255,0.73), transparent), radial-gradient(1px 1px at 160px 174px, rgba(255,255,255,0.63), transparent), radial-gradient(1px 1px at 296px 233px, rgba(255,255,255,0.76), transparent), radial-gradient(1px 1px at 138px 242px, rgba(255,255,255,0.33), transparent), radial-gradient(2px 2px at 158px 331px, rgba(255,255,255,0.85), transparent), radial-gradient(1.5px 1.5px at 228px 145px, rgba(255,255,255,0.79), transparent), radial-gradient(1.5px 1.5px at 177px 11px, rgba(255,255,255,0.5), transparent), radial-gradient(1.5px 1.5px at 312px 59px, rgba(255,255,255,0.33), transparent), radial-gradient(1px 1px at 147px 66px, rgba(255,255,255,0.52), transparent), radial-gradient(1px 1px at 254px 41px, rgba(255,255,255,0.55), transparent), radial-gradient(1px 1px at 281px 142px, rgba(255,255,255,0.75), transparent), radial-gradient(1.5px 1.5px at 281px 142px, rgba(255,255,255,0.84), transparent)",
+        backgroundSize: "340px 340px",
+        opacity: 0.55,
+        animation: "capBgStars2 210s linear infinite"
+      }
+    })), /*#__PURE__*/React.createElement("style", null, `
           @keyframes undockGlow { 0%, 100% { box-shadow: 0 0 18px rgba(240,178,62,.30); } 50% { box-shadow: 0 0 38px rgba(240,178,62,.62); } }
           .undock-btn { animation: undockGlow 3s ease-in-out infinite; transition: transform .14s ease, filter .14s ease; }
           .undock-btn:hover { transform: translateY(-1px); filter: brightness(1.06); animation-duration: 1.6s; }
@@ -13671,7 +13729,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build 2026.07.10-nogrades"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v2 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
