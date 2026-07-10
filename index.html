@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v30 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v33 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v30 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v33 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -10864,6 +10864,110 @@ const KIND_ICONS = {
   siege: Anchor
 };
 
+// Real EVE item icons via CCP's official image server, with SVG fallback on error.
+const MOD_TID = {
+  shieldBooster: 41507,
+  armorRep: 41500,
+  remoteRep: 41466,
+  capBooster: 41493,
+  hardener: 2281,
+  siege: 4292,
+  nos: 40665
+};
+function moduleTypeId(mod) {
+  const n = (mod.name || "").toLowerCase();
+  if (n.includes("disintegrator")) return 92514; // Ultratidal Entropic Disintegrator II
+  if (n.includes("torpedo")) return 37294; // XL Torpedo Launcher II
+  if (n.includes("cruise")) return 37295; // XL Cruise Missile Launcher II
+  if (n.includes("smartbomb")) return 3995; // Large EMP Smartbomb II
+  if (n.includes("neutralizer")) return 40662; // Capital Energy Neutralizer II
+  if (n.includes("nosferatu")) return 40665; // Capital Energy Nosferatu
+  if (n.includes("pithum")) return 4349; // Pithum C-Type Multispectrum Shield Hardener
+  return MOD_TID[mod.kind] || null; // null -> SVG fallback
+}
+function ModIcon({
+  mod,
+  size,
+  color,
+  strokeWidth,
+  style
+}) {
+  const [failed, setFailed] = useState(false);
+  const tid = failed ? null : moduleTypeId(mod);
+  if (tid) return /*#__PURE__*/React.createElement("img", {
+    src: `https://images.evetech.net/types/${tid}/icon?size=64`,
+    alt: "",
+    draggable: false,
+    width: size + 8,
+    height: size + 8,
+    onError: () => setFailed(true),
+    style: {
+      display: "block",
+      objectFit: "contain",
+      filter: "drop-shadow(0 1px 2px rgba(0,0,0,.7))",
+      ...style
+    }
+  });
+  const Fallback = KIND_ICONS[mod.kind] || ShieldCheck;
+  return /*#__PURE__*/React.createElement(Fallback, {
+    size: size,
+    color: color,
+    strokeWidth: strokeWidth,
+    style: style
+  });
+}
+function ChargeIcon({
+  size = 16
+}) {
+  const [failed, setFailed] = useState(false);
+  if (!failed) return /*#__PURE__*/React.createElement("img", {
+    src: "https://images.evetech.net/types/41489/icon?size=64",
+    alt: "",
+    draggable: false,
+    width: size,
+    height: size,
+    onError: () => setFailed(true),
+    style: {
+      display: "block",
+      flexShrink: 0,
+      filter: "drop-shadow(0 1px 1px rgba(0,0,0,.6))"
+    }
+  });
+  return /*#__PURE__*/React.createElement("svg", {
+    width: "12",
+    height: "18",
+    viewBox: "0 0 14 20"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "4",
+    y: "0",
+    width: "6",
+    height: "3",
+    rx: "1",
+    fill: "#8A8F98"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "1",
+    y: "3",
+    width: "12",
+    height: "16",
+    rx: "2.5",
+    fill: "#B9852F",
+    stroke: "#E8C476",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "7",
+    width: "8",
+    height: "2",
+    fill: "#7A5A1E"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "11",
+    width: "8",
+    height: "2",
+    fill: "#7A5A1E"
+  }));
+}
+
 // ============ Sim engine ============
 function initSim(fit, scenario, pingMs) {
   const mods = {};
@@ -11590,7 +11694,8 @@ function ModuleButton({
       border: `1px solid ${rt.active ? rt.wantOff ? "#8A3A34" : "#4A7A48" : "#3A3D42"}`,
       position: "relative"
     }
-  }, /*#__PURE__*/React.createElement(Icon, {
+  }, /*#__PURE__*/React.createElement(ModIcon, {
+    mod: mod,
     size: 22,
     color: rt.active ? rt.wantOff ? "#F2B4AF" : "#CFEACB" : inFlight ? C.violet : reloading ? C.amber : "#8A8F98",
     strokeWidth: 1.8,
@@ -11840,7 +11945,7 @@ function CapacitorTrainer() {
 
   // ---- EVE SSO corp verification (soft gate) ----
   const EVE_CLIENT_ID = "088cf54a118d4a8ebba8735453bd4f69";
-  const EVE_CORP_ID = 98040755;
+  const EVE_CORPS = [98040755, 98778021];
   const EVE_REDIRECT = "https://capschool.app/";
   const EVE_TOKEN_PROXY = "https://capschool-eve.liberalrhino.workers.dev/token"; // Cloudflare Worker endpoint
   const EVE_LEADERBOARD = "https://capschool-eve.liberalrhino.workers.dev/leaderboard";
@@ -12000,7 +12105,7 @@ function CapacitorTrainer() {
           name,
           corpId,
           corpName,
-          verified: corpId === EVE_CORP_ID,
+          verified: EVE_CORPS.includes(corpId),
           token: data.cap_session
         };
         setEveAuth(auth);
@@ -13856,7 +13961,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v30 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v33 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14012,39 +14117,9 @@ function CapacitorTrainer() {
       borderRadius: 6,
       padding: "4px 7px"
     }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "12",
-    height: "18",
-    viewBox: "0 0 14 20"
-  }, /*#__PURE__*/React.createElement("rect", {
-    x: "4",
-    y: "0",
-    width: "6",
-    height: "3",
-    rx: "1",
-    fill: "#8A8F98"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: "1",
-    y: "3",
-    width: "12",
-    height: "16",
-    rx: "2.5",
-    fill: "#B9852F",
-    stroke: "#E8C476",
-    strokeWidth: "0.8"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: "3",
-    y: "7",
-    width: "8",
-    height: "2",
-    fill: "#7A5A1E"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: "3",
-    y: "11",
-    width: "8",
-    height: "2",
-    fill: "#7A5A1E"
-  })), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(ChargeIcon, {
+    size: 16
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: mono,
       fontSize: 9,
