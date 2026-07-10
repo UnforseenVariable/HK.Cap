@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v2 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v3 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v2 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v3 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -12726,9 +12726,9 @@ function CapacitorTrainer() {
       style: {
         position: "fixed",
         inset: 0,
-        background: "rgba(4,8,14,.74)",
-        backdropFilter: "blur(3px)",
-        WebkitBackdropFilter: "blur(3px)",
+        background: "rgba(4,8,14,.80)",
+        backdropFilter: "blur(5px)",
+        WebkitBackdropFilter: "blur(5px)",
         zIndex: 60,
         display: "flex",
         alignItems: "center",
@@ -12738,91 +12738,157 @@ function CapacitorTrainer() {
     }, /*#__PURE__*/React.createElement("div", {
       onClick: e => e.stopPropagation(),
       style: {
-        maxWidth: 480,
+        position: "relative",
+        maxWidth: 500,
         width: "100%",
-        background: "linear-gradient(180deg, #121C2A 0%, #0B121C 100%)",
-        border: `1px solid ${C.amber}`,
-        borderRadius: 14,
-        padding: "26px 26px 22px",
-        boxShadow: "0 24px 70px rgba(0,0,0,.55)"
+        background: "linear-gradient(180deg, #131F2E 0%, #0A111B 100%)",
+        border: `1px solid ${C.line}`,
+        borderRadius: 16,
+        boxShadow: "0 30px 90px rgba(0,0,0,.62)",
+        overflow: "hidden"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
+        height: 3,
+        background: `linear-gradient(90deg, ${C.cyan} 0%, ${C.amber} 100%)`
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        top: -70,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: 300,
+        height: 140,
+        background: `radial-gradient(circle, ${C.amber}26, transparent 70%)`,
+        pointerEvents: "none"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "relative",
+        padding: "24px 26px 22px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 11,
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        background: `${C.amber}18`,
+        border: `1px solid ${C.amber}55`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement(Zap, {
+      size: 19,
+      color: C.amber
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
         fontFamily: mono,
         color: C.amber,
-        fontSize: 10,
-        letterSpacing: 4,
+        fontSize: 9,
+        letterSpacing: 3,
         textTransform: "uppercase"
       }
-    }, "Welcome to CapSchool"), /*#__PURE__*/React.createElement("h2", {
+    }, "CapSchool · Capacitor Certification"), /*#__PURE__*/React.createElement("h2", {
       style: {
-        fontSize: 21,
+        fontSize: 20,
         fontWeight: 700,
-        margin: "8px 0 6px"
+        margin: "2px 0 0",
+        letterSpacing: 0.3
       }
-    }, "How This Works"), /*#__PURE__*/React.createElement("p", {
+    }, "How It Works"))), /*#__PURE__*/React.createElement("p", {
       style: {
         color: C.dim,
-        fontSize: 13,
+        fontSize: 12.5,
         lineHeight: 1.6,
         margin: "0 0 18px"
       }
-    }, "A live capacitor & tank drill for sieged capitals. You know the mechanics — here’s just the tool."), [["1", "Set up", "Pick a ship and a threat scenario. Open Customize loadout to rebind hotkeys or edit the rack."], ["2", "Undock & siege", "Nothing lands until you activate Siege — that starts the challenge clock and the neut + DPS pressure."], ["3", "Hold the line", "Fire each module with its hotkey, inject cap boosters, and keep your capacitor off the floor. Survive for a full after-action report."]].map(([n, t, d]) => /*#__PURE__*/React.createElement("div", {
-      key: n,
+    }, "A live capacitor & tank drill for sieged capitals. You already know the mechanics — this is the range to sharpen your inject-repping under real pressure."), [["Fit & choose", "Pick your ship and a threat scenario. Open Customize Loadout to rebind hotkeys or edit the rack.", Wrench, C.amber], ["Undock & siege", "Nothing lands until you activate Siege — that starts the 5:00 clock and the neut + incoming DPS.", Anchor, C.cyan], ["Inject-rep to survive", "Time your cap boosters to fuel every rep and keep the tank steady. Hold the full cycle for a scored after-action report.", Zap, C.green]].map(([t, d, Ico, col], i) => /*#__PURE__*/React.createElement("div", {
+      key: t,
       style: {
         display: "flex",
-        gap: 12,
-        marginBottom: 14,
-        alignItems: "flex-start"
+        gap: 13,
+        marginBottom: 9,
+        alignItems: "flex-start",
+        background: "#0C1421",
+        border: `1px solid ${C.line}`,
+        borderRadius: 11,
+        padding: "12px 13px"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         flexShrink: 0,
-        width: 24,
-        height: 24,
-        borderRadius: "50%",
-        background: "#1A2634",
-        border: `1px solid ${C.amber}`,
-        color: C.amber,
-        fontFamily: mono,
-        fontSize: 12,
-        fontWeight: 700,
+        width: 38,
+        height: 38,
+        borderRadius: 10,
+        background: `${col}14`,
+        border: `1px solid ${col}44`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center"
       }
-    }, n), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(Ico, {
+      size: 19,
+      color: col
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 13,
         fontWeight: 700,
         color: C.text
       }
-    }, t), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: col,
+        marginRight: 7
+      }
+    }, i + 1), t), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.dim,
         lineHeight: 1.5,
-        marginTop: 2
+        marginTop: 3
       }
     }, d)))), /*#__PURE__*/React.createElement("button", {
       onClick: dismissOnboarding,
       style: {
         width: "100%",
-        marginTop: 8,
+        marginTop: 12,
         background: C.amber,
         color: "#14100A",
         border: "none",
-        borderRadius: 8,
-        padding: "12px",
+        borderRadius: 9,
+        padding: "13px",
         fontFamily: mono,
         fontSize: 13,
         fontWeight: 700,
-        letterSpacing: 1,
+        letterSpacing: 1.5,
         cursor: "pointer",
         textTransform: "uppercase"
       }
-    }, "Got it — let’s fly"))), /*#__PURE__*/React.createElement("div", {
+    }, "Got it — Let's Fly ▸"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        fontFamily: mono,
+        fontSize: 9,
+        color: "#5A6472",
+        marginTop: 11
+      }
+    }, "Reopen anytime via “How it works” in the header")))), /*#__PURE__*/React.createElement("div", {
       style: {
         maxWidth: 1040,
         margin: "0 auto"
@@ -13729,7 +13795,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v2 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v3 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
