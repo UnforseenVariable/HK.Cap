@@ -14352,15 +14352,14 @@ function CapacitorTrainer() {
     const mInject = _s.charges > 0 ? clamp01(1 - _s.wastedInj / _s.charges) : 1;
     // Rep conversion: every booster fuels a rep (or, on the Phoenix, keeps a shield hardener up)
     const mRepConv = _s.charges > 0 ? clamp01(1 - _s.injNoRep / _s.charges) : 1;
-    // Tank safety + steadiness on the ACTIVE layer (shield for Phoenix, armor for Zirnitra)
+    // Tank safety: average active-layer HP + steadiness (shield for Phoenix, armor for Zirnitra)
     const _n = Math.max(1, _s.hpN);
-    const _minLayer = clamp01(_isShield ? _s.minShield : _s.minArmor);
     const _sum = _isShield ? _s.shSum : _s.arSum;
     const _sq = _isShield ? _s.shSq : _s.arSq;
     const _mean = _sum / _n;
     const _std = Math.sqrt(Math.max(0, _sq / _n - _mean * _mean));
     const _steady = clamp01(1 - _std / 0.28);
-    const mTank = clamp01(0.6 * _minLayer + 0.4 * _steady);
+    const mTank = clamp01(0.6 * clamp01(_mean) + 0.4 * _steady);
     // Hardener uptime (shield fit only; armor resists are passive so it is exempt)
     const _hardUptime = _nHard > 0 ? clamp01(1 - _s.hardOffS / Math.max(1, secs * _nHard)) : 1;
     // --- ship-specific factor tables (weights sum to 1) ---
