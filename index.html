@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v33 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v35 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v33 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v35 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -10874,8 +10874,37 @@ const MOD_TID = {
   siege: 4292,
   nos: 40665
 };
+// Faction variants have their own icons — match by name BEFORE the T2 kind fallback.
+const NAME_TID = [{
+  m: ["domination", "shield booster"],
+  id: 41510
+},
+// Domination Capital Shield Booster
+{
+  m: ["dread guristas", "shield booster"],
+  id: 41509
+},
+// Dread Guristas Capital Shield Booster
+{
+  m: ["dark blood", "capacitor booster"],
+  id: 41494
+},
+// Dark Blood Capital Capacitor Booster
+{
+  m: ["dark blood", "cap booster"],
+  id: 41494
+}, {
+  m: ["true sansha", "capacitor booster"],
+  id: 41495
+},
+// True Sansha Capital Capacitor Booster
+{
+  m: ["true sansha", "cap booster"],
+  id: 41495
+}];
 function moduleTypeId(mod) {
   const n = (mod.name || "").toLowerCase();
+  for (const e of NAME_TID) if (e.m.every(w => n.includes(w))) return e.id;
   if (n.includes("disintegrator")) return 92514; // Ultratidal Entropic Disintegrator II
   if (n.includes("torpedo")) return 37294; // XL Torpedo Launcher II
   if (n.includes("cruise")) return 37295; // XL Cruise Missile Launcher II
@@ -10898,8 +10927,8 @@ function ModIcon({
     src: `https://images.evetech.net/types/${tid}/icon?size=64`,
     alt: "",
     draggable: false,
-    width: size + 8,
-    height: size + 8,
+    width: size + 20,
+    height: size + 20,
     onError: () => setFailed(true),
     style: {
       display: "block",
@@ -13961,7 +13990,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v33 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v35 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
