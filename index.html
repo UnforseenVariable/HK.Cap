@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v45 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v46 · 2026.07.10 -->
 <title>CapSchool</title>
 <style>
   html, body { margin: 0; padding: 0; background: #070B12; }
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v45 · 2026.07.10 -->
+<!-- CapSchool — Capital Capacitor Trainer. Copyright (c) 2026 Aloen. All rights reserved. Proprietary; unauthorized copying, modification, or hosting prohibited. Not affiliated with Fenris Creations. build v46 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -11176,6 +11176,88 @@ const STACK_PEN = [1, 0.8691, 0.5706, 0.2830, 0.1060, 0.0301, 0.0069];
 function stackPenalty(n) {
   return STACK_PEN[Math.min(n, STACK_PEN.length - 1)];
 }
+// ---- Wormhole system effects (EVE Uni values, post-Hyperion) ----
+const WH_P15 = [0.15, 0.22, 0.29, 0.36, 0.43, 0.50]; // C1..C6 "weak" scale
+const WH_P30 = [0.30, 0.44, 0.58, 0.72, 0.86, 1.00]; // C1..C6 "strong" scale
+const WH_EFFECTS = {
+  pulsar: {
+    label: "Pulsar",
+    desc: "shield hole",
+    mods: i => ({
+      shieldHp: 1 + WH_P30[i],
+      armorRes: 1 - WH_P15[i],
+      capRc: 1 - WH_P15[i]
+    })
+  },
+  wolfrayet: {
+    label: "Wolf-Rayet",
+    desc: "armor hole",
+    mods: i => ({
+      armorHp: 1 + WH_P30[i],
+      shieldRes: 1 - WH_P15[i]
+    })
+  },
+  cataclysmic: {
+    label: "Cataclysmic",
+    desc: "logi hole — local reps gutted",
+    mods: i => ({
+      localRep: 1 - WH_P15[i],
+      capMax: 1 + WH_P30[i],
+      capRc: 1 + WH_P15[i]
+    })
+  },
+  magnetar: {
+    label: "Magnetar",
+    desc: "damage — no cap/tank effect here",
+    mods: () => ({})
+  },
+  blackhole: {
+    label: "Black Hole",
+    desc: "speed/range — no cap/tank effect here",
+    mods: () => ({})
+  },
+  redgiant: {
+    label: "Red Giant",
+    desc: "heat/bombs — no cap/tank effect here",
+    mods: () => ({})
+  }
+};
+function applyWormhole(fit, effKey, ci) {
+  const eff = WH_EFFECTS[effKey];
+  if (!eff) return fit;
+  const m = eff.mods(ci);
+  const nf = {
+    ...fit
+  };
+  if (m.capMax) nf.capMax = Math.round(fit.capMax * m.capMax);
+  if (m.capRc) nf.capRechargeS = Math.round(fit.capRechargeS * m.capRc);
+  if (m.localRep) nf.modules = fit.modules.map(mm => mm.kind === "shieldBooster" || mm.kind === "armorRep" ? {
+    ...mm,
+    rep: mm.rep * m.localRep
+  } : mm);
+  nf.wh = {
+    shieldHp: m.shieldHp || 1,
+    armorHp: m.armorHp || 1,
+    shieldRes: m.shieldRes || 1,
+    armorRes: m.armorRes || 1
+  };
+  return nf;
+}
+function whSummary(effKey, ci) {
+  const eff = WH_EFFECTS[effKey];
+  if (!eff) return "";
+  const m = eff.mods(ci);
+  const parts = [];
+  const pc = x => (x >= 1 ? "+" : "\u2212") + Math.round(Math.abs(x - 1) * 100) + "%";
+  if (m.shieldHp) parts.push("shield HP " + pc(m.shieldHp));
+  if (m.armorHp) parts.push("armor HP " + pc(m.armorHp));
+  if (m.shieldRes) parts.push("shield resist " + pc(m.shieldRes));
+  if (m.armorRes) parts.push("armor resist " + pc(m.armorRes));
+  if (m.capMax) parts.push("cap capacity " + pc(m.capMax));
+  if (m.capRc) parts.push("cap regen " + (m.capRc < 1 ? "+" : "\u2212") + Math.round(Math.abs(m.capRc - 1) * 100) + "%");
+  if (m.localRep) parts.push("local rep " + pc(m.localRep));
+  return eff.label + " C" + (ci + 1) + " \u00b7 " + (parts.length ? parts.join(" \u00b7 ") : eff.desc);
+}
 function effResist(sim, fit, layer) {
   const full = (layer === "shield" ? fit.resShield : layer === "armor" ? fit.resArmor : fit.resHull) || 0;
   let allProd = 1,
@@ -11202,6 +11284,10 @@ function effResist(sim, fit, layer) {
     const eff = 1 - (1 - BURST_RES) * stackPenalty(nAct);
     resist = 1 - (1 - resist) * eff;
   }
+  const w = fit.wh; // wormhole resist debuff
+  if (w) {
+    if (layer === "shield") resist *= w.shieldRes;else if (layer === "armor") resist *= w.armorRes;
+  }
   return Math.max(0, Math.min(0.99, resist));
 }
 function linkRepMult(fit, kind) {
@@ -11211,9 +11297,14 @@ function linkRepMult(fit, kind) {
 function effHpMax(fit, layer) {
   const base = (layer === "shield" ? fit.shieldMax : layer === "armor" ? fit.armorMax : fit.hullMax) || 0;
   const L = fit.links || {};
-  if (layer === "shield" && L.shieldHp) return Math.round(base * 1.22); // Shield Extension burst
-  if (layer === "armor" && L.armorHp) return Math.round(base * 1.22); // Armor Reinforcement burst
-  return base;
+  let v = base;
+  if (layer === "shield" && L.shieldHp) v = base * 1.22; // Shield Extension burst
+  else if (layer === "armor" && L.armorHp) v = base * 1.22; // Armor Reinforcement burst
+  const w = fit.wh; // wormhole HP effect
+  if (w) {
+    if (layer === "shield") v *= w.shieldHp;else if (layer === "armor") v *= w.armorHp;
+  }
+  return Math.round(v);
 }
 function siegeOn(sim, fit) {
   return fit.modules.some(m => m.kind === "siege" && sim.mods[m.id] && sim.mods[m.id].active);
@@ -11957,6 +12048,9 @@ function CapacitorTrainer() {
   const [screen, setScreen] = useState("setup");
   const [fit, setFit] = useState(() => hydrateFit(PRESETS[0]));
   const [scenario, setScenario] = useState(() => JSON.parse(JSON.stringify(SCENARIOS[0])));
+  const [whOn, setWhOn] = useState(false); // wormhole effects — off by default, locked off for the benchmark
+  const [whEffect, setWhEffect] = useState("pulsar");
+  const [whClass, setWhClass] = useState(4); // 0=C1 .. 5=C6
   const [sim, setSim] = useState(null);
   const [pasteText, setPasteText] = useState("");
   const [importReport, setImportReport] = useState(null);
@@ -12213,8 +12307,9 @@ function CapacitorTrainer() {
       };
     });
   }, []);
-  const fitRef = useRef(fit);
-  fitRef.current = fit;
+  const whFit = whOn && !scenario.locked && whEffect !== "none" ? applyWormhole(fit, whEffect, whClass) : fit;
+  const fitRef = useRef(whFit);
+  fitRef.current = whFit;
   const scnRef = useRef(scenario);
   scnRef.current = scenario;
   const tickRef = useRef(tickMode);
@@ -12490,7 +12585,7 @@ function CapacitorTrainer() {
     setLbSubmitted(false);
     setLbResult(null);
     setLbError("");
-    setSim(initSim(fit, scenario, pingEnabled ? pingMs : 0));
+    setSim(initSim(whFit, scenario, pingEnabled ? pingMs : 0));
     setScreen("sim");
   };
 
@@ -13841,7 +13936,120 @@ function CapacitorTrainer() {
         flex: 1,
         minWidth: 150
       }
-    }, pingEnabled ? `Inputs delayed by your ping (~${pingMs || "?"}ms).` : "No input delay (default)."))), /*#__PURE__*/React.createElement("div", {
+    }, pingEnabled ? `Inputs delayed by your ping (~${pingMs || "?"}ms).` : "No input delay (default).")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 11,
+        color: C.text,
+        width: 84
+      }
+    }, "Wormhole"), [["On", true], ["Off", false]].map(([label, v]) => {
+      const cur = whOn && !scenario.locked;
+      return /*#__PURE__*/React.createElement("button", {
+        key: label,
+        disabled: scenario.locked,
+        onClick: () => !scenario.locked && setWhOn(v),
+        style: {
+          opacity: scenario.locked ? 0.4 : 1,
+          cursor: scenario.locked ? "not-allowed" : "pointer",
+          background: cur === v ? C.amber : "transparent",
+          color: cur === v ? "#14100A" : C.dim,
+          fontWeight: cur === v ? 700 : 400,
+          border: `1px solid ${cur === v ? C.amber : C.line}`,
+          borderRadius: 7,
+          padding: "6px 13px",
+          fontFamily: mono,
+          fontSize: 11
+        }
+      }, label);
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: C.dim,
+        flex: 1,
+        minWidth: 150
+      }
+    }, scenario.locked ? "Locked off for the benchmark." : whOn ? "System effect applies to your ship." : "No system effect (default).")), whOn && !scenario.locked && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        paddingLeft: 4,
+        borderLeft: `2px solid ${C.line}`,
+        marginLeft: 2
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: "#5A6472",
+        width: 74
+      }
+    }, "EFFECT"), Object.keys(WH_EFFECTS).map(k => /*#__PURE__*/React.createElement("button", {
+      key: k,
+      onClick: () => setWhEffect(k),
+      style: {
+        background: whEffect === k ? `${C.amber}22` : "transparent",
+        color: whEffect === k ? C.amber : C.dim,
+        border: `1px solid ${whEffect === k ? C.amber : C.line}`,
+        borderRadius: 6,
+        padding: "4px 9px",
+        fontFamily: mono,
+        fontSize: 10,
+        fontWeight: whEffect === k ? 700 : 400,
+        cursor: "pointer"
+      }
+    }, WH_EFFECTS[k].label))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: "#5A6472",
+        width: 74
+      }
+    }, "CLASS"), [0, 1, 2, 3, 4, 5].map(i => /*#__PURE__*/React.createElement("button", {
+      key: i,
+      onClick: () => setWhClass(i),
+      style: {
+        background: whClass === i ? C.amber : "transparent",
+        color: whClass === i ? "#14100A" : C.dim,
+        border: `1px solid ${whClass === i ? C.amber : C.line}`,
+        borderRadius: 6,
+        padding: "4px 11px",
+        fontFamily: mono,
+        fontSize: 10,
+        fontWeight: whClass === i ? 700 : 400,
+        cursor: "pointer"
+      }
+    }, "C", i + 1))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: mono,
+        fontSize: 9,
+        color: "#C9A24B",
+        lineHeight: 1.6
+      }
+    }, whSummary(whEffect, whClass)))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 24
       }
@@ -14063,7 +14271,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v45 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · build v46 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14074,25 +14282,25 @@ function CapacitorTrainer() {
 
   // ---------- SIM ----------
   if (!sim) return null;
-  const regen = rechargeRate(sim.cap, fit.capMax, fit.capRechargeS);
-  const modDrain = fit.modules.reduce((a, m) => sim.mods[m.id].active && m.capUse > 0 ? a + m.capUse / m.cycleS : a, 0);
+  const regen = rechargeRate(sim.cap, whFit.capMax, whFit.capRechargeS);
+  const modDrain = whFit.modules.reduce((a, m) => sim.mods[m.id].active && m.capUse > 0 ? a + m.capUse / m.cycleS : a, 0);
   const combatOn = sim.siegeStartT != null;
   const ct = combatOn ? sim.t - sim.siegeStartT : 0;
-  const neutAvg = scenario.neuts.reduce((a, n) => combatOn && ct >= n.startS - 3 ? a + n.amount * n.count * (1 - (fit.neutResist || 0)) / n.cycleS : a, 0);
+  const neutAvg = scenario.neuts.reduce((a, n) => combatOn && ct >= n.startS - 3 ? a + n.amount * n.count * (1 - (whFit.neutResist || 0)) / n.cycleS : a, 0);
   const net = regen - modDrain - neutAvg;
   const dShield = sim.dShield != null ? sim.dShield : sim.shield;
   const dArmor = sim.dArmor != null ? sim.dArmor : sim.armor;
   const dHull = sim.dHull != null ? sim.dHull : sim.hull;
   const neutFlash = sim.t - sim.lastNeutHit < 0.7;
   const tRemain = Math.max(0, scenario.durationS - ct);
-  const rS = effResist(sim, fit, "shield"),
-    rA = effResist(sim, fit, "armor"),
-    rH = effResist(sim, fit, "hull");
-  const ehpTotal = Math.round(effHpMax(fit, "shield") / (1 - Math.min(0.99, rS)) + effHpMax(fit, "armor") / (1 - Math.min(0.99, rA)) + effHpMax(fit, "hull") / (1 - Math.min(0.99, rH)));
-  const sgOn = fit.modules.some(m => m.kind === "siege" && sim.mods[m.id] && sim.mods[m.id].active);
-  const sgRp = fit.modules.reduce((mx, m) => m.kind === "siege" && sim.mods[m.id] && sim.mods[m.id].active ? Math.max(mx, m.repMult || 1) : mx, 1);
+  const rS = effResist(sim, whFit, "shield"),
+    rA = effResist(sim, whFit, "armor"),
+    rH = effResist(sim, whFit, "hull");
+  const ehpTotal = Math.round(effHpMax(whFit, "shield") / (1 - Math.min(0.99, rS)) + effHpMax(whFit, "armor") / (1 - Math.min(0.99, rA)) + effHpMax(whFit, "hull") / (1 - Math.min(0.99, rH)));
+  const sgOn = whFit.modules.some(m => m.kind === "siege" && sim.mods[m.id] && sim.mods[m.id].active);
+  const sgRp = whFit.modules.reduce((mx, m) => m.kind === "siege" && sim.mods[m.id] && sim.mods[m.id].active ? Math.max(mx, m.repMult || 1) : mx, 1);
   const sgDur = sgOn ? 0.5 : 1;
-  const localTank = Math.round(fit.modules.reduce((acc, m) => {
+  const localTank = Math.round(whFit.modules.reduce((acc, m) => {
     if (!sim.mods[m.id] || !sim.mods[m.id].active) return acc;
     if (m.kind === "shieldBooster") return acc + m.rep * sgRp * linkRepMult(fit, m.kind) / (m.cycleS * sgDur) / (1 - Math.min(0.99, rS));
     if (m.kind === "armorRep") return acc + m.rep * sgRp * linkRepMult(fit, m.kind) / (m.cycleS * sgDur) / (1 - Math.min(0.99, rA));
@@ -14247,17 +14455,17 @@ function CapacitorTrainer() {
   }, /*#__PURE__*/React.createElement(Bar, {
     label: "SHIELD",
     value: dShield,
-    max: effHpMax(fit, "shield"),
+    max: effHpMax(whFit, "shield"),
     color: C.cyan
   }), /*#__PURE__*/React.createElement(Bar, {
     label: "ARMOR",
     value: dArmor,
-    max: effHpMax(fit, "armor"),
+    max: effHpMax(whFit, "armor"),
     color: C.armor
   }), /*#__PURE__*/React.createElement(Bar, {
     label: "HULL",
     value: dHull,
-    max: effHpMax(fit, "hull"),
+    max: effHpMax(whFit, "hull"),
     color: C.hull
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -14332,7 +14540,7 @@ function CapacitorTrainer() {
     style: {
       color: C.amber
     }
-  }, fit.name), " · ", scenario.name), /*#__PURE__*/React.createElement("div", {
+  }, whFit.name), " · ", scenario.name), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -14437,16 +14645,16 @@ function CapacitorTrainer() {
     }
   }, /*#__PURE__*/React.createElement(CapGauge, {
     cap: sim.cap,
-    capMax: fit.capMax,
+    capMax: whFit.capMax,
     rate: regen,
     netHint: net,
     neutFlash: neutFlash,
     shield: dShield,
-    shieldMax: effHpMax(fit, "shield"),
+    shieldMax: effHpMax(whFit, "shield"),
     armor: dArmor,
-    armorMax: effHpMax(fit, "armor"),
+    armorMax: effHpMax(whFit, "armor"),
     hull: dHull,
-    hullMax: effHpMax(fit, "hull"),
+    hullMax: effHpMax(whFit, "hull"),
     speed: sim.speed,
     onSpeed: s => setSim(p => ({
       ...p,
@@ -14467,7 +14675,7 @@ function CapacitorTrainer() {
   }, Array.from({
     length: 12
   }, (_, s) => {
-    const m = fit.modules.find(x => x.slot === s);
+    const m = whFit.modules.find(x => x.slot === s);
     return /*#__PURE__*/React.createElement("div", {
       key: s,
       onDragOver: e => {
@@ -14567,12 +14775,12 @@ function CapacitorTrainer() {
     const line = H.length ? H.map((p, i) => `${i ? "L" : "M"}${cx(p.t).toFixed(1)},${cy(p.c).toFixed(1)}`).join(" ") : "";
     const area = H.length ? `M${cx(H[0].t).toFixed(1)},${cy(0).toFixed(1)} ${H.map(p => `L${cx(p.t).toFixed(1)},${cy(p.c).toFixed(1)}`).join(" ")} L${cx(H[H.length - 1].t).toFixed(1)},${cy(0).toFixed(1)} Z` : "";
     const last = H.length ? H[H.length - 1] : null;
-    const capPct = Math.round(sim.cap / fit.capMax * 100);
+    const capPct = Math.round(sim.cap / whFit.capMax * 100);
     const sm2 = siegeMults(sim, fit);
     let tankEhps = 0;
-    fit.modules.forEach(m => {
+    whFit.modules.forEach(m => {
       if ((m.kind === "shieldBooster" || m.kind === "armorRep") && sim.mods[m.id] && sim.mods[m.id].active) {
-        const res = effResist(sim, fit, m.kind === "shieldBooster" ? "shield" : "armor");
+        const res = effResist(sim, whFit, m.kind === "shieldBooster" ? "shield" : "armor");
         tankEhps += (m.rep || 0) * sm2.rp * linkRepMult(fit, m.kind) / effCycle(sim, fit, m) / (1 - Math.min(0.99, res));
       }
     });
@@ -14718,13 +14926,13 @@ function CapacitorTrainer() {
     const capUptime = Math.max(0, Math.round(100 * (1 - sim.stats.dry / Math.max(1, secs))));
     const injEff = sim.stats.charges > 0 ? Math.round(100 * (sim.stats.charges - sim.stats.injWasted) / sim.stats.charges) : null;
     const sweetPct = Math.round(100 * sim.stats.sweet / Math.max(1, secs));
-    const gunSlots = Math.max(1, fit.modules.filter(m => m.kind === "gun" || m.kind === "remoteRep").length);
+    const gunSlots = Math.max(1, whFit.modules.filter(m => m.kind === "gun" || m.kind === "remoteRep").length);
     const objUptime = Math.round(100 * sim.stats.gunUp / Math.max(1, secs * gunSlots));
     const clamp01 = x => Math.max(0, Math.min(1, x));
     const _s = sim.stats;
-    const _isShield = fit.name.toLowerCase().includes("phoenix");
+    const _isShield = whFit.name.toLowerCase().includes("phoenix");
     const _dur = Math.max(1, scenario.durationS);
-    const _nHard = fit.modules.filter(m => m.kind === "hardener").length;
+    const _nHard = whFit.modules.filter(m => m.kind === "hardener").length;
     // --- controllable sub-metrics, each scored as a fraction of optimal play [0..1] ---
     // Inject efficiency: charges spent usefully (not overcapped, not with reps off) vs total spent
     const mInject = _s.charges > 0 ? clamp01(1 - _s.wastedInj / _s.charges) : 1;
@@ -14750,7 +14958,7 @@ function CapacitorTrainer() {
     const _logAvg = scoreParts.reduce((a, p) => a + p[2] * Math.log(Math.max(EPS, p[1])), 0) / _wsum;
     const _base = Math.exp(_logAvg); // 0..1, fraction of optimal play
     // --- bleed modifier: docks the score for letting damage bleed past the primary tank layer ---
-    const _primaryMax = _isShield ? effHpMax(fit, "shield") : effHpMax(fit, "armor");
+    const _primaryMax = _isShield ? effHpMax(whFit, "shield") : effHpMax(whFit, "armor");
     const _bleedRatio = _primaryMax > 0 ? (_s.bleed || 0) / _primaryMax : 0;
     const mBleed = Math.max(0.5, 1 - _bleedRatio * 0.6); // full primary-layer's worth bled -> ~0.5x
     // --- final score: survivors on 0..100; deaths get a continuous 0..49 gradient ---
@@ -14763,7 +14971,7 @@ function CapacitorTrainer() {
     }
     const grade = perfScore >= 95 ? "S" : perfScore >= 88 ? "A" : perfScore >= 78 ? "B" : perfScore >= 65 ? "C" : perfScore >= 50 ? "D" : "E";
     const gradeColor = perfScore >= 88 ? C.green : perfScore >= 65 ? C.amber : C.red;
-    const capEnd = sim.deathCapPct != null ? sim.deathCapPct : sim.cap / fit.capMax;
+    const capEnd = sim.deathCapPct != null ? sim.deathCapPct : sim.cap / whFit.capMax;
     // cause of death
     let cause = null;
     if (sim.result === "destroyed") {
@@ -14945,7 +15153,7 @@ function CapacitorTrainer() {
         color: C.amber,
         marginTop: 8
       }
-    }, fit.name), /*#__PURE__*/React.createElement("div", {
+    }, whFit.name), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 10,
@@ -15004,7 +15212,7 @@ function CapacitorTrainer() {
       }
     }, lbResult.rank === 1 ? "👑 #1 — TOP OF THE BOARD" : `▲ Posted — you're #${lbResult.rank} of ${lbResult.total}`), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        setLbTab(shipKey(fit.name));
+        setLbTab(shipKey(whFit.name));
         setLbMode(tickMode || sim && sim.pingMs > 0 ? "sync" : "std");
         setLbOpen(true);
       },
@@ -15021,7 +15229,7 @@ function CapacitorTrainer() {
         cursor: "pointer"
       }
     }, "View leaderboard →")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-      onClick: () => submitScore(shipKey(fit.name), perfScore, tickMode || sim && sim.pingMs > 0 ? "sync" : "std"),
+      onClick: () => submitScore(shipKey(whFit.name), perfScore, tickMode || sim && sim.pingMs > 0 ? "sync" : "std"),
       style: {
         width: "100%",
         background: C.amber,
@@ -15392,7 +15600,7 @@ function CapacitorTrainer() {
       setLbSubmitted(false);
       setLbResult(null);
       setLbError("");
-      setSim(initSim(fit, scenario, pingEnabled ? pingMs : 0));
+      setSim(initSim(whFit, scenario, pingEnabled ? pingMs : 0));
     },
     style: {
       flex: 1,
