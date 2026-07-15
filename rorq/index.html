@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v3 · 2026.07.10 -->
+<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v4 · 2026.07.10 -->
 <title>CapSchool · RORQ</title>
 <style>html,body{margin:0;padding:0;background:#070B12;}#root{min-height:100vh;}</style>
 </head>
@@ -29,7 +29,7 @@
   if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", wire); else wire();
 })();
 </script>
-<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v3 · 2026.07.10 -->
+<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v4 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -13159,7 +13159,7 @@ function CapacitorTrainer() {
       const siegeRp = (p.modules.find(m => m.kind === "siege") || {}).repMult || 1;
       const tank = p.modules.filter(m => m.kind === "shieldBooster" || m.kind === "armorRep").reduce((a, m) => {
         const res = m.kind === "shieldBooster" ? rS : rA;
-        return a + m.rep * siegeRp / (m.cycleS * 0.5) / (1 - res);
+        return a + m.rep * siegeRp / m.cycleS / (1 - res);
       }, 0) * (_whM.localRep || 1);
       const tc = isShield ? C.cyan : C.armor;
       return /*#__PURE__*/React.createElement("button", {
@@ -14056,7 +14056,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · rorq v3 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · rorq v4 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
