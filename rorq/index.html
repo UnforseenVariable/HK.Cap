@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v6 · 2026.07.10 -->
+<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v7 · 2026.07.10 -->
 <title>CapSchool · RORQ</title>
 <style>html,body{margin:0;padding:0;background:#070B12;}#root{min-height:100vh;}</style>
 </head>
@@ -29,7 +29,7 @@
   if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", wire); else wire();
 })();
 </script>
-<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v6 · 2026.07.10 -->
+<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v7 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -13975,7 +13975,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · rorq v6 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · rorq v7 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14162,18 +14162,18 @@ function CapacitorTrainer() {
     }
   }, /*#__PURE__*/React.createElement(Bar, {
     label: "SHIELD",
-    value: dShield,
-    max: effHpMax(whFit, "shield"),
+    value: Math.round(dShield / (1 - Math.min(0.99, rS))),
+    max: Math.round(effHpMax(whFit, "shield") / (1 - Math.min(0.99, rS))),
     color: C.cyan
   }), /*#__PURE__*/React.createElement(Bar, {
     label: "ARMOR",
-    value: dArmor,
-    max: effHpMax(whFit, "armor"),
+    value: Math.round(dArmor / (1 - Math.min(0.99, rA))),
+    max: Math.round(effHpMax(whFit, "armor") / (1 - Math.min(0.99, rA))),
     color: C.armor
   }), /*#__PURE__*/React.createElement(Bar, {
     label: "HULL",
-    value: dHull,
-    max: effHpMax(whFit, "hull"),
+    value: Math.round(dHull / (1 - Math.min(0.99, rH))),
+    max: Math.round(effHpMax(whFit, "hull") / (1 - Math.min(0.99, rH))),
     color: C.hull
   }), /*#__PURE__*/React.createElement("div", {
     style: {
