@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v4 · 2026.07.10 -->
+<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v6 · 2026.07.10 -->
 <title>CapSchool · RORQ</title>
 <style>html,body{margin:0;padding:0;background:#070B12;}#root{min-height:100vh;}</style>
 </head>
@@ -29,7 +29,7 @@
   if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", wire); else wire();
 })();
 </script>
-<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v4 · 2026.07.10 -->
+<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v6 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -11040,8 +11040,7 @@ function siegeOn(sim, fit) {
   return fit.modules.some(m => m.kind === "siege" && sim.mods[m.id] && sim.mods[m.id].active);
 }
 function effCycle(sim, fit, m) {
-  if (siegeOn(sim, fit) && (m.kind === "shieldBooster" || m.kind === "armorRep" || m.kind === "remoteRep")) return m.cycleS * 0.5;
-  return m.cycleS;
+  return m.cycleS; // Industrial Core provides no local-rep bonus; reps are already at final values
 }
 function step(sim, fit, scenario, dt, log) {
   if (!sim.running || sim.ended) return sim;
@@ -11822,20 +11821,14 @@ function CapacitorTrainer() {
     };
   }, []);
   useEffect(() => {
-    if (!scenario.locked) return;
-    const shield = true;
+    // Rorqual: command bursts are baked into the hull stats, so links stay off (no double-count)
     setFit(f => ({
       ...f,
-      links: shield ? {
-        shieldRes: true,
-        shieldHp: true,
-        armorRes: false,
-        armorHp: false
-      } : {
+      links: {
         shieldRes: false,
         shieldHp: false,
-        armorRes: true,
-        armorHp: true
+        armorRes: false,
+        armorHp: false
       }
     }));
   }, [scenario.locked, fit.name]);
@@ -13360,23 +13353,15 @@ function CapacitorTrainer() {
         onClick: () => {
           const sc = JSON.parse(JSON.stringify(s));
           setScenario(sc);
-          if (sc.locked) {
-            const shield = true;
-            setFit(f => ({
-              ...f,
-              links: shield ? {
-                shieldRes: true,
-                shieldHp: true,
-                armorRes: false,
-                armorHp: false
-              } : {
-                shieldRes: false,
-                shieldHp: false,
-                armorRes: true,
-                armorHp: true
-              }
-            }));
-          }
+          setFit(f => ({
+            ...f,
+            links: {
+              shieldRes: false,
+              shieldHp: false,
+              armorRes: false,
+              armorHp: false
+            }
+          }));
         },
         style: {
           background: on ? C.amber : "transparent",
@@ -13538,72 +13523,6 @@ function CapacitorTrainer() {
         cursor: "pointer"
       }
     }, "+ add neut wave"))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: mono,
-        fontSize: 10,
-        letterSpacing: 2.5,
-        color: C.dim,
-        textTransform: "uppercase",
-        margin: "28px 0 12px"
-      }
-    }, "Fleet Command Bursts ", /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: "#5A6472",
-        letterSpacing: 0,
-        textTransform: "none"
-      }
-    }, scenario.locked ? "· online for benchmark" : "· optional")), /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: C.panel,
-        border: `1px solid ${C.line}`,
-        borderRadius: 12,
-        padding: 16
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 8,
-        flexWrap: "wrap"
-      }
-    }, [{
-      k: "shieldRes",
-      label: "Shield Harmonizing",
-      layer: "shield"
-    }, {
-      k: "shieldHp",
-      label: "Shield Extension",
-      layer: "shield"
-    }, {
-      k: "armorRes",
-      label: "Armor Energizing",
-      layer: "armor"
-    }, {
-      k: "armorHp",
-      label: "Armor Reinforcement",
-      layer: "armor"
-    }].filter(L => !scenario.locked || L.layer === (true ? "shield" : "armor")).map(L => {
-      const locked = scenario.locked;
-      const on = locked ? true : (fit.links || {})[L.k];
-      return /*#__PURE__*/React.createElement("button", {
-        key: L.k,
-        className: locked ? "" : "chip",
-        onClick: locked ? undefined : () => setF("links", {
-          ...(fit.links || {}),
-          [L.k]: !on
-        }),
-        style: {
-          background: on ? "#14210F" : "transparent",
-          border: `1px solid ${on ? C.green : C.line}`,
-          color: on ? C.green : C.dim,
-          borderRadius: 7,
-          padding: "7px 12px",
-          fontFamily: mono,
-          fontSize: 11,
-          cursor: locked ? "default" : "pointer",
-          whiteSpace: "nowrap"
-        }
-      }, locked ? "🔒 " : on ? "✓ " : "", L.label);
-    }))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 10,
@@ -14056,7 +13975,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · rorq v4 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · rorq v6 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
@@ -14084,13 +14003,17 @@ function CapacitorTrainer() {
   const ehpTotal = Math.round(effHpMax(whFit, "shield") / (1 - Math.min(0.99, rS)) + effHpMax(whFit, "armor") / (1 - Math.min(0.99, rA)) + effHpMax(whFit, "hull") / (1 - Math.min(0.99, rH)));
   const sgOn = whFit.modules.some(m => m.kind === "siege" && sim.mods[m.id] && sim.mods[m.id].active);
   const sgRp = whFit.modules.reduce((mx, m) => m.kind === "siege" && sim.mods[m.id] && sim.mods[m.id].active ? Math.max(mx, m.repMult || 1) : mx, 1);
-  const sgDur = sgOn ? 0.5 : 1;
+  const sgDur = 1; // Industrial Core: no rep-speed bonus
   const localTank = Math.round(whFit.modules.reduce((acc, m) => {
     if (!sim.mods[m.id] || !sim.mods[m.id].active) return acc;
     if (m.kind === "shieldBooster") return acc + m.rep * sgRp * linkRepMult(fit, m.kind) / (m.cycleS * sgDur) / (1 - Math.min(0.99, rS));
     if (m.kind === "armorRep") return acc + m.rep * sgRp * linkRepMult(fit, m.kind) / (m.cycleS * sgDur) / (1 - Math.min(0.99, rA));
     return acc;
   }, 0));
+  const _spoolEl = Math.max(0, ct - (scenario.dpsStartS || 0));
+  const _spoolFrac = scenario.spoolTo && scenario.spoolTime ? Math.min(1, _spoolEl / scenario.spoolTime) : 0;
+  const curInDps = combatOn && ct >= (scenario.dpsStartS || 0) ? Math.round(scenario.incomingDps + (scenario.spoolTo ? (scenario.spoolTo - scenario.incomingDps) * _spoolFrac : 0)) : scenario.incomingDps;
+  const spoolPct = Math.round(_spoolFrac * 100);
   const chargePanels = /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -14268,12 +14191,16 @@ function CapacitorTrainer() {
     style: {
       color: C.amber
     }
-  }, " · Siege ×4") : null), scenario.incomingDps > 0 && /*#__PURE__*/React.createElement("div", {
+  }, " · Core active") : null), scenario.incomingDps > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       color: combatOn && ct >= scenario.dpsStartS ? C.red : C.dim,
       marginTop: 6
     }
-  }, "Incoming ", fmt(scenario.incomingDps), " DPS · ", !combatOn ? "Holding" : ct < scenario.dpsStartS ? `In ${(scenario.dpsStartS - ct).toFixed(0)}s` : "Landing", scenario.volley && sim && sim.attacker ? (() => {
+  }, "Incoming ", fmt(curInDps), " DPS · ", !combatOn ? "Holding" : ct < scenario.dpsStartS ? `In ${(scenario.dpsStartS - ct).toFixed(0)}s` : "Landing", scenario.spoolTo && combatOn && ct >= scenario.dpsStartS ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: spoolPct >= 100 ? C.red : C.amber
+    }
+  }, " · spool ", spoolPct, "% (", fmt(scenario.incomingDps), "→", fmt(scenario.spoolTo), ")") : null, scenario.volley && sim && sim.attacker ? (() => {
     const cur = Math.round(sim.attacker.dps * (sim.spoolMult || 1));
     const sus = Math.max(0, scenario.incomingDps - cur);
     const sp = sim.attacker.spoolMax ? Math.round(((sim.spoolMult || 1) - 1) / (sim.attacker.spoolMax - 1) * 100) : null;
@@ -14570,7 +14497,7 @@ function CapacitorTrainer() {
       }
     });
     const neutGJs = (scenario.neuts || []).reduce((a, n) => a + n.amount * n.count / (n.cycleS || 1), 0);
-    const inDps = combatOn && ct >= (scenario.dpsStartS || 0) ? scenario.incomingDps : 0;
+    const inDps = combatOn && ct >= (scenario.dpsStartS || 0) ? curInDps : 0;
     const capColor = capPct < 15 ? C.red : capPct < 30 ? C.amber : C.cyan;
     const reads = [["PING", sim.pingMs ? `${sim.pingMs}ms` : "—", sim.pingMs > 150 ? C.red : sim.pingMs > 60 ? C.amber : C.green], ["CAP", `${capPct}%`, capColor], ["LOCAL TANK", `${fmt(tankEhps)}`, tankEhps ? C.green : C.dim], ["INCOMING DPS", `${fmt(inDps)}`, inDps ? C.red : C.dim], ["NEUT GJ/S", `${fmt(neutGJs)}`, neutGJs && combatOn ? C.red : C.dim]];
     return /*#__PURE__*/React.createElement("div", {
