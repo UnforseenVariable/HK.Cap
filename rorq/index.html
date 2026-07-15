@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v1 · 2026.07.10 -->
+<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v2 · 2026.07.10 -->
 <title>CapSchool · RORQ</title>
 <style>html,body{margin:0;padding:0;background:#070B12;}#root{min-height:100vh;}</style>
 </head>
@@ -29,7 +29,7 @@
   if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", wire); else wire();
 })();
 </script>
-<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v1 · 2026.07.10 -->
+<!-- CapSchool RORQ — Rorqual test build. Copyright (c) 2026 Aloen. All rights reserved. Proprietary. Not affiliated with Fenris Creations. rorq v2 · 2026.07.10 -->
 <div id="root"></div>
 <script>/**
  * @license React
@@ -12316,10 +12316,6 @@ function CapacitorTrainer() {
     });
   }, [pushLog]);
   const start = () => {
-    if (!eveAuth || !eveAuth.verified) {
-      eveLogin();
-      return;
-    }
     setLbSubmitted(false);
     setLbResult(null);
     setLbError("");
@@ -13113,12 +13109,12 @@ function CapacitorTrainer() {
         flexShrink: 0
       }
     }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => eveAuth && eveAuth.verified ? start() : eveLogin(),
-      className: eveAuth && eveAuth.verified ? "undock-btn" : "",
+      onClick: start,
+      className: "undock-btn",
       style: {
-        background: eveAuth && eveAuth.verified ? C.amber : "transparent",
-        color: eveAuth && eveAuth.verified ? "#14100A" : C.amber,
-        border: eveAuth && eveAuth.verified ? "none" : `1px solid ${C.amber}`,
+        background: C.amber,
+        color: "#14100A",
+        border: "none",
         borderRadius: 10,
         padding: isMobile ? "14px 20px" : "15px 48px",
         fontFamily: mono,
@@ -13130,7 +13126,7 @@ function CapacitorTrainer() {
         width: isMobile ? "100%" : "auto",
         textAlign: "center"
       }
-    }, eveAuth && eveAuth.verified ? "UNDOCK ▸" : "🔒 Log in to undock"))), /*#__PURE__*/React.createElement("div", {
+    }, "UNDOCK ▸"))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: mono,
         fontSize: 10,
@@ -14060,7 +14056,7 @@ function CapacitorTrainer() {
         color: "#5A6472",
         letterSpacing: 0.5
       }
-    }, "© 2026 Aloen · CapSchool · All rights reserved. · rorq v1 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
+    }, "© 2026 Aloen · CapSchool · All rights reserved. · rorq v2 · 2026.07.10"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: mono,
         fontSize: 9,
